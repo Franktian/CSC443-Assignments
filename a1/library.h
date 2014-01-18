@@ -27,6 +27,11 @@ void fixed_len_read(void *buf, int size, Record *record);
 /**
 * Page
 */
+typedef struct {
+    void *data;
+    int page_size;
+    int slot_size;
+} Page;
 
 /**
  * Initializes a page using the given slot size
