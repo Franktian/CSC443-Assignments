@@ -12,6 +12,7 @@ void test_fixed_len_sizeof() {
         numattr--;
     }
     cout << fixed_len_sizeof(r) << endl;
+    delete r;
 }
 
 void test_fixed_len_page_capacity() {
@@ -19,6 +20,8 @@ void test_fixed_len_page_capacity() {
     p->page_size = 110;
     p->slot_size = 10;
     cout << fixed_len_page_capacity(p) << endl;
+    delete p->data;
+    delete p;
 }
 
 int main() {

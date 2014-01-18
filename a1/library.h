@@ -73,7 +73,7 @@ void read_fixed_len_page(Page *page, int slot, Record *r);
 typedef struct {
     FILE *file_ptr;
     int page_size;
-} Heapfile
+} Heapfile;
 
 /*
  * PageID and RecordID
@@ -110,7 +110,7 @@ class RecordIterator {
     RecordIterator(Heapfile *heapfile);
     Record next();
     bool hasNext();
-}
+};
 
 
 
