@@ -43,7 +43,7 @@ void fixed_len_write(Record *record, void *buf) {
         if (!position)
             return;
         // Iterate over the all the attributes and copy them into the buf
-        strncpy (position, record->at(i), strlen(record->at(i)))
+        strncpy (position, record->at(i), strlen(record->at(i)));
         position += strlen(record->at(i));
     }
     return;
@@ -84,8 +84,10 @@ int fixed_indicator_bit_array_length(int numSlots) {
  */
 int fixed_len_page_capacity(Page *page) {
 
-    if (!page)
-        return;
+    if (!page) {
+        cout << "ERROR fixed_len_page_capacity(): Page pointer is NULL!" << endl;
+        return 0;
+    }
     
     int numSlots = page->page_size / page->slot_size;
     int overhead = page->page_size % page->slot_size;
@@ -149,7 +151,7 @@ int fixed_len_page_freeslots(Page *page) {
     int numSlots = *(int*)((char*)(page->data) + index);
     int numSlotIndicators = fixed_indicator_bit_array_length(numSlots);
     int i = 0;
-    while (i < numIndicatorBytes) {
+    while (i < numSlotIndicators) {
         index--;
         char *data = ((char*)page->data + index);
         occupiedSlots += count1s(*(char*)data);
@@ -176,7 +178,7 @@ void setSlotOccupied(Page *page, int slot) {
  */
 int findAvailableSlot(Page *page) {
     
-    
+    return -1;
 }
 
 /**
