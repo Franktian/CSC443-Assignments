@@ -198,7 +198,7 @@ int add_fixed_len_page(Page *page, Record *r) {
 
 /**
  * Write a record into a given slot.
- * Assumption: Slot # start with 1
+ * Assumption: Slot # start with 0
  */
 void write_fixed_len_page(Page *page, int slot, Record *r) {
     // Check if Record is NULL or the page has not been initialized
@@ -210,7 +210,7 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
     int recordSize = fixed_len_sizeof(r);
     int numSlots = *(int*)((char*)(page->data) + page->page_size - sizeof(int));
     // Slot input is invalid
-    if (slot>numSlots) {
+    if (slot+1 > numSlots || slot < 0) {
         cout << "ERROR write_fixed_len_page(): Invalid slot number!" << endl;
         return;
     }
@@ -229,6 +229,7 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
 
 /**
  * Read a record from the page from a given slot.
+ * Assumption: Slot # start with 0
  */
 void read_fixed_len_page(Page *page, int slot, Record *r) {
     
@@ -241,7 +242,7 @@ void read_fixed_len_page(Page *page, int slot, Record *r) {
     int recordSize = fixed_len_sizeof(r);
     int numSlots = *(int*)((char*)(page->data) + page->page_size - sizeof(int));
     // Slot input is invalid
-    if (slot>numSlots) {
+    if (slot+1 > numSlots || slot < 0) {
         cout << "ERROR read_fixed_len_page(): Invalid slot number!" << endl;
         return;
     }
