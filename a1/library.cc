@@ -253,3 +253,32 @@ void read_fixed_len_page(Page *page, int slot, Record *r) {
     
     return;
 }
+
+/**
+ * Record Iterator class
+ */
+class RecordIterator {
+
+    Heapfile* heapfile;
+
+public:
+
+    RecordIterator(Heapfile* hf) {
+        heapfile = hf;
+    }
+
+    // Record next() {
+    //     if (!hasNext()) {
+    //         cout << "ERROR next(): no next record." << endl;
+    //         return;
+    //     }
+    //     // Get the nex record
+    // }
+
+    // bool hasNext() {
+    //     return false;
+    // }
+
+
+
+};

@@ -18,8 +18,8 @@ library.o: library.cc library.h
 clean:
 	rm -rf *.o
 
-#csv2heapfile: csv2heapfile.cc library.o
-#    $(CC) -o $@ $< library.o
+csv2heapfile: csv2heapfile.cc library.o
+	$(CC) -o $@ $< library.o
  
 #heapfile2csv: heapfile2csv.cc library.o
 #    $(CC) -o $@ $< library.o
