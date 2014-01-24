@@ -2,6 +2,7 @@
 # define __LIBRARY_H_INCLUDED
 
 #include <vector>
+#include <cstdio>
 
 typedef const char* V;
 typedef std::vector<V> Record;
@@ -76,14 +77,39 @@ typedef struct {
 } Heapfile;
 
 /*
- * PageID and RecordID
+ * PageID, unique for a page within a heapfile
  */
 typedef int PageID;
 
+/** 
+ * Data structure defining the ID of a record. 
+ * The RecordID must be unique given a heapfile
+ */
 typedef struct {
-    int page_offset;
+    int page_id;
     int slot;
 } RecordID;
+
+/**
+ * Directory header is a record about the current directory.
+ * It should have the same size as a DirectoryRecord.
+ */
+typedef struct {
+	int offset; // Offset of the current directory page
+	int next; // Offset of the next directory page
+	int place_holder; // Just to algin the size with directory record
+} DirectoryHeader;
+
+/**
+ * Directory Record is a record about a data page in a directory page.
+ * Note: we need to serialize this record using the same function 
+ * for serializing regular records in a data page.
+ */
+typedef struct {
+	PageID page_id;
+	int page_offset;
+	int free_slots;
+} DirectoryRecord;
 
 /**
  * Initalize a heapfile to use the file and page size given.
@@ -105,5 +131,54 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page);
  */
 void write_page(Page *page, Heapfile *heapfile, PageID pid);
 
+
+/**
+ * The directory iterator for a heapfile of multiple directories
+ */
+class DirectoryIterator {
+public:
+	DirectoryIterator(Heapfile* heapfile);
+	~DirectoryIterator();
+	bool hasNext();
+
+	// Return the next directory page
+	Page* next();
+
+private:
+	Heapfile* heapfile;
+};
+
+/* Page iterator class for a directory 
+ * Used to iterate through all pages in a directory
+ */
+class PageIterator {
+public:
+	PageIterator(Heapfile* heapfile, Page* directory);
+	~PageIterator();
+	Page* next();
+	bool hasNext();
+
+private:
+	Heapfile* heapfile;
+};
+
+/* Record iterator class for iterating through 
+ * all records in the heap file
+ */
+class RecordIterator {
+public:
+    RecordIterator(Heapfile *heapfile);
+    ~RecordIterator();
+
+    // Get the next non-empty record in the heap
+    Record next();
+    
+    // Check if the heap has anymore non-empty record
+    bool hasNext();
+
+private:
+	// The heap file we are iterating
+	Heapfile* heapfile;
+};
 
 #endif
