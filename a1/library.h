@@ -6,6 +6,8 @@
 
 typedef const char* V;
 typedef std::vector<V> Record;
+// The byte offset position in a file
+typedef int Offset;
 
 /**
  * Compute the number of bytes required to serialize record
@@ -82,40 +84,22 @@ typedef struct {
  * This is the same as the page_offset data members in
  * RecordID and DirectoryRecord.
  */
-typedef int PageID;
+typedef Offset PageID;
 
 /** 
  * Data structure defining the ID of a record. 
  * The RecordID must be unique given a heapfile
  */
 typedef struct {
-    int page_offset;
+    Offset page_offset;
     int slot;
 } RecordID;
 
-/**
- * Directory header is a record about the current directory.
- * It should have the same size as a DirectoryRecord.
- */
-typedef struct {
-	// The byte offset of the current directory page from the
-	// beginning of the heapfile
-	int offset;
-	// The byte offset of the next directory page
-	int next_offset;
-} DirectoryHeader;
+// A number used to check if the deserialized heapfile is non-empty
+#define DIRECTORY_RECORD_SIGNATURE 314159
 
-/**
- * Directory Record is a record about a data page in a directory page.
- * Note: we need to serialize this record using the same function 
- * for serializing regular records in a data page.
- */
-typedef struct {
-	// The byte offset of the page from the beginning of the heapfile
-	int page_offset; 
-	// The number of free slots in this page
-	int free_slots;
-} DirectoryRecord;
+// The first directory's byte offset, should be 0
+#define FIRST_DIRECTORY_OFFSET 0
 
 /**
  * Initalize a heapfile to use the file and page size given.

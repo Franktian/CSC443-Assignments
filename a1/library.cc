@@ -1,6 +1,8 @@
 #include "library.h"
 #include <iostream>
 #include <cstring>
+#include <cstdio>
+#include <cassert>
 
 using namespace std;
 
@@ -252,4 +254,131 @@ void read_fixed_len_page(Page *page, int slot, Record *r) {
     memcpy((void*)r, (void*)data, page->slot_size);
     
     return;
+}
+
+/* Heapfile functions */
+
+/** 
+ * Write a page to a file, at the position given by offset 
+ * set start_begin to false to start the offset at the end of the file
+ */
+void _write_page_to_file(Page* page, Offset offset, FILE* file, bool start_begin = true) {
+    fseek(file, offset, start_begin ? SEEK_SET : SEEK_END);
+    fwrite(page->data, page->page_size, 1, file);
+    fflush(file);
+}
+
+/** 
+ * Read a page from a file, at the position given by offset
+ */
+void _read_page_from_file(Page* page, Offset offset, FILE* file) {
+    fseek(file, offset, SEEK_SET);
+    fread(page->data, page->page_size, 1, file);
+}
+
+/**
+ * Get the position at the end of the file 
+ */
+Offset _get_eof_offset(FILE* file) {
+    fseek(file, 0, SEEK_END);
+    return ftell(file);
+}
+
+/** 
+ * Free a page of its data
+ */
+void _free_page(Page* page) {
+    delete[] (char*)(page->data);
+    delete page;
+}
+
+// Return the size of the serialized directory page record in bytes
+inline int _calc_directory_page_slot_size() {
+    return sizeof(Offset)*3;
+}
+
+/**
+ * Initialize a fixed length record with 3 attributes
+ */
+void _init_fixed_len_record_int_attr(Record* record, Offset attr1, Offset attr2, Offset attr3) {
+    char* bytes_buf = new char[sizeof(Offset)];
+    memcpy(bytes_buf, &attr1, sizeof(Offset));
+    record->push_back(bytes_buf);
+    memcpy(bytes_buf, &attr2, sizeof(Offset));
+    record->push_back(bytes_buf);
+    memcpy(bytes_buf, &attr3, sizeof(Offset));
+    record->push_back(bytes_buf);
+    delete[] bytes_buf;
+}
+
+/**
+ * Initialize a directory header record (just another Record type)
+ * A drectory header record has 3 attributes:
+ * 0: byte offset of this directory
+ * 1: byte offset of the next directory
+ * 2: A signature number used for validation after parsing
+ */
+void _init_directory_header(Record* record, Offset offset) {
+    assert(offset >= 0);
+    _init_fixed_len_record_int_attr(record, offset, 0, DIRECTORY_RECORD_SIGNATURE);
+}
+
+/**
+ * Initialize a directory record
+ * A drectory record has 3 attributes:
+ * 0: byte offset of the page pointed by this record
+ * 1: number of free slots in the page
+ * 2: A signature number used for validation after parsing
+ */
+void _init_directory_record(Record* record, Offset page_offset, int free_slots) {
+    assert(page_offset >= 0 && free_slots >= 0);
+    _init_fixed_len_record_int_attr(record, page_offset, free_slots, DIRECTORY_RECORD_SIGNATURE);
+}
+
+/* Read a value from the directory record, given index of the value */
+Offset _read_directory_record(Record* record, int index) {
+    assert(index <= 3 && index >= 0);
+    Offset value;
+    memcpy(&value, (char*) record->at(0), sizeof(Offset));
+    return value;
+}
+
+/**
+ * Initialize a directory page and create the header record
+ * A directory page is used for pointing to data pages
+ */
+void _init_directory_page(Page* page, Offset offset) {
+    Record* header = new Record;
+    _init_directory_header(header, offset);
+    int ret = add_fixed_len_page(page, header);
+    assert(ret != -1);
+}
+
+void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
+    heapfile->file_ptr = file;
+    heapfile->page_size = page_size;
+
+    // Check if this is a new heapfile by checking if it has a directory
+    // page at the beginning of the file with a valid directory header,
+    // which contains the signature number. 
+    Page* directory_page = new Page();
+    init_fixed_len_page(directory_page, page_size, _calc_directory_page_slot_size());
+    _read_page_from_file(directory_page, FIRST_DIRECTORY_OFFSET, file);
+    
+    // Read the header record at the first slot of the page
+    Record* header = new Record();
+    read_fixed_len_page(directory_page, 0, header);
+
+    // If the header was not correctly parsed, then it is a new heapfile
+    if (! _read_directory_record(header, 0) == FIRST_DIRECTORY_OFFSET || 
+        ! _read_directory_record(header, 2) == DIRECTORY_RECORD_SIGNATURE) {
+        // Create the first directory page
+        _init_directory_page(directory_page, FIRST_DIRECTORY_OFFSET);
+
+        // Write the page to the file
+        _write_page_to_file(directory_page, FIRST_DIRECTORY_OFFSET, file);
+    }
+
+    // Free the directory page being used for checking
+    _free_page(directory_page);
 }
