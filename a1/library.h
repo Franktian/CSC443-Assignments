@@ -78,6 +78,9 @@ typedef struct {
 
 /*
  * PageID, unique for a page within a heapfile
+ * We use the byte offset of the page as its page id.
+ * This is the same as the page_offset data members in
+ * RecordID and DirectoryRecord.
  */
 typedef int PageID;
 
@@ -86,7 +89,7 @@ typedef int PageID;
  * The RecordID must be unique given a heapfile
  */
 typedef struct {
-    int page_id;
+    int page_offset;
     int slot;
 } RecordID;
 
@@ -95,9 +98,11 @@ typedef struct {
  * It should have the same size as a DirectoryRecord.
  */
 typedef struct {
-	int offset; // Offset of the current directory page
-	int next; // Offset of the next directory page
-	int place_holder; // Just to algin the size with directory record
+	// The byte offset of the current directory page from the
+	// beginning of the heapfile
+	int offset;
+	// The byte offset of the next directory page
+	int next_offset;
 } DirectoryHeader;
 
 /**
@@ -106,8 +111,9 @@ typedef struct {
  * for serializing regular records in a data page.
  */
 typedef struct {
-	PageID page_id;
-	int page_offset;
+	// The byte offset of the page from the beginning of the heapfile
+	int page_offset; 
+	// The number of free slots in this page
 	int free_slots;
 } DirectoryRecord;
 
