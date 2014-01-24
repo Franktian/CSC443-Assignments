@@ -7,6 +7,7 @@
 typedef const char* V;
 typedef std::vector<V> Record;
 
+
 /**
  * Compute the number of bytes required to serialize record
  */
