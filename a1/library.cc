@@ -1,6 +1,7 @@
 #include "library.h"
 #include <iostream>
 #include <cstring>
+#include <assert.h>
 
 using namespace std;
 
@@ -62,8 +63,11 @@ void fixed_len_read(void *buf, int size, Record *record) {
     }
     
     // Copy the value into the record
-    memcpy((void*)record, buf, size);
-    
+    assert(size == fixed_len_sizeof(record));
+    for (int i = 0; i < record->size(); i++) {
+        // SCHEMA_ATTRIBUTE_LEN is fix = 10 bytes
+        memcpy((char*)record, (char*)buf + SCHEMA_ATTRIBUTE_LEN * i, SCHEMA_ATTRIBUTE_LEN);
+    }
     return;
 }
 
@@ -74,7 +78,7 @@ void fixed_len_read(void *buf, int size, Record *record) {
  * indicators.
  */
 int fixed_indicator_bit_array_length(int numSlots) {
-    return numSlots / 8 + 1;
+    return numSlots % 8 == 0 ? numSlots/8 : numSlots/8 + 1;
 }
 
 /**
@@ -113,7 +117,7 @@ void init_fixed_len_page(Page *page, int page_size, int slot_size) {
     page->data = new char[page_size];
     
     // initialize the tail, which contains the # of total slots
-    memset(page->data, '\0', page_size);
+    memset(page->data, 0, page_size);
     // Advance the pointer to point the last 4 bytes of the data buffer.
     char *position = (char*)page->data + page_size - sizeof(int); // The last 4 bytes (int) has the # of total slots
     int capacity = fixed_len_page_capacity(page);
@@ -166,8 +170,26 @@ int fixed_len_page_freeslots(Page *page) {
  * Helper Function - Set corresponding slot directory indicator bit to 1
  */
 void setSlotOccupied(Page *page, int slot) {
-    
-    
+    // Find the appropriate byte
+    int byte = (slot-1) / 8; 
+
+    // Move to the byte where stores the according slot directory indicator
+    char *directory = (char*)page->data + page->page_size - 1 - byte; 
+   
+    // Generate the masking bit
+    int offset = (slot-1) % 8;
+    char bit = 0x00;
+    int i = 0;
+    for (i=0; i<offset; i++) {
+       if (i == 0)
+           bit = bit | 0x1;
+       else
+           bit = bit << 1;  
+    } 
+
+    // Mask the corresponding bit to 1
+    *directory = *directory | bit;
+    return; 
 }
 
 /**
@@ -177,23 +199,53 @@ void setSlotOccupied(Page *page, int slot) {
  *    -1 if page is full (unsuccessful)
  */
 int findAvailableSlot(Page *page) {
-    
-    return -1;
-}
+    int slotIndex = 0;
+    // Move to beginning of the slot directory
+    char *directory = (char*)page->data + page->page_size - 1; 
+    int  pageCapacity =  fixed_len_page_capacity(page);
 
-/**
- * Add a record to the page
- * Returns:
- *   record slot offset if successful,
- *   -1 if unsuccessful (page full)
- *
- */
-int add_fixed_len_page(Page *page, Record *r) {
-    
-    
-    
-    
-    return 0;
+    // Iterate each byte for the slot directory and search to 0 bit
+    int i = 0;
+    char byte = *directory;
+    while (i < pageCapacity/8) {
+        byte = *directory;
+        int j = 0;
+        int value = 0;
+        while (j < 7) {
+            // Extract the last bit, check whether it is 0.
+            value = byte & 0x1;
+            if (value == 0)
+                return i*8 + j; // Corresponding slot index
+            // Since the bit is 1, shift to the right by 1 bit.
+            else
+                byte = byte >> 1;
+            j++;
+        }
+        i++;
+        directory--;
+    }
+
+    // Extra Process of the left over bits.
+    // Find out how many extra bits need to be processed
+    int extra = pageCapacity % 8;
+    i = 0;
+    byte = *directory;
+    while (i < extra) {
+ 
+        int value = 0;
+        value = byte & 0x1;
+        if (value == 0) {
+            int tempValue = pageCapacity/8;
+            return tempValue*8 + i;
+        }
+        else
+            byte = byte >> 1;
+
+        i++;
+    }
+
+    // No available slots find, return -1
+    return -1;    
 }
 
 /**
@@ -205,26 +257,52 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
     if (!page || !page->data || !r) {
         cout << "ERROR write_fixed_len_page(): NULL pointers passed in!" << endl;
         return;
-    }
-    
+    }   
+       
     int recordSize = fixed_len_sizeof(r);
     int numSlots = *(int*)((char*)(page->data) + page->page_size - sizeof(int));
     // Slot input is invalid
     if (slot+1 > numSlots || slot < 0) {
         cout << "ERROR write_fixed_len_page(): Invalid slot number!" << endl;
         return;
-    }
-    
+    }   
+       
     // Find the location to write
     char *data = (char*)page->data + page->slot_size*slot;
     // Write the record into the given slot
-    memcpy((void*)data,(void*)r, page->slot_size);
-    
+    fixed_len_write(r, (void*) data);   
     // Update the slot directory indicator bit
-    // FIXME
     setSlotOccupied(page, slot);
     
     return;
+}
+
+/**
+ * Add a record to the page
+ * Returns:
+ *   record slot offset if successful,
+ *   -1 if unsuccessful (page full)
+ *
+ */
+int add_fixed_len_page(Page *page, Record *r) {
+    
+   if (!page || !page->data || !r) {
+       cout << "ERROR add_fixed_len_page(): Invalid inputs - NULL Pointers!" << endl;
+       return -1; 
+   }    
+
+   // Find available slot for the record    
+   int slot = findAvailableSlot(page);
+   if ( slot == -1 ) {
+       // Page is full
+       cout << "Warning: Page is full, unable to add a record to page!" << endl;
+       return -1;
+   }
+
+   // Find slot position and copy the data.
+   write_fixed_len_page(page, slot, r);
+
+   return 0; 
 }
 
 /**
@@ -249,7 +327,7 @@ void read_fixed_len_page(Page *page, int slot, Record *r) {
     
     // Find the location to read
     char *data = (char*)page->data + page->slot_size*slot;
-    memcpy((void*)r, (void*)data, page->slot_size);
+    fixed_len_read((void*)data, fixed_len_sizeof(r), r);
     
     return;
 }
