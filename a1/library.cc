@@ -405,6 +405,7 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /**
  * DirectoryIterator constructor
  */
@@ -468,6 +469,8 @@ Record RecordIterator::next() {
     return false;
  }
 =======
+=======
+>>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
 PageID alloc_page(Heapfile *heapfile) {
     // Initialize a fixed length page
     Page* page = new Page();
@@ -526,5 +529,9 @@ PageID alloc_page(Heapfile *heapfile) {
 
     // We use the new page's offset as the ID of the page
     return page_offset;
+<<<<<<< HEAD
+}
+>>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
+=======
 }
 >>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
