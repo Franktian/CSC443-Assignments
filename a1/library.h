@@ -34,6 +34,7 @@ typedef struct {
     void *data;
     int page_size;
     int slot_size;
+    int capacity;
 } Page;
 
 /**
@@ -103,6 +104,7 @@ typedef struct {
 
 /**
  * Initalize a heapfile to use the file and page size given.
+ * If the file is a new heapfile, create the first directory page
  */
 void init_heapfile(Heapfile *heapfile, int page_size, FILE *file);
 
@@ -127,7 +129,7 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid);
  */
 class DirectoryIterator {
 public:
-	DirectoryIterator(Heapfile* heapfile);
+	DirectoryIterator(Heapfile* heapf);
 	~DirectoryIterator();
 	bool hasNext();
 
@@ -145,8 +147,10 @@ class PageIterator {
 public:
 	PageIterator(Heapfile* heapfile, Page* directory);
 	~PageIterator();
-	Page* next();
 	bool hasNext();
+	
+	// Return the next data page
+	Page* next();
 
 private:
 	Heapfile* heapfile;
