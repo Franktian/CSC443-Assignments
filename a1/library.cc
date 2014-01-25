@@ -404,73 +404,6 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
     _free_page(directory_page);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-/**
- * DirectoryIterator constructor
- */
-DirectoryIterator::DirectoryIterator(Heapfile* heapf) {
-    heapfile = heapf;
-}
-
-
-DirectoryIterator::~DirectoryIterator() {
-
-}
-
-bool DirectoryIterator::hasNext() {
-    return false;
-};
-
-Page* DirectoryIterator::next() {
-    return -1;
-}
-
-
- /**
-  * PageIterator constructor
-  */
-PageIterator::PageIterator(Heapfile* heapf, Page* directory) {
-    heapfile = heapf;
-}
-PageIterator::~PageIterator() {
-
-}
-bool PageIterator::hasNext() {
-    return false;
-}
-Page* PageIterator::next() {
-    return -1;
-}
-
-
-
-/**
- * RecordIterator constructor
- */
- RecordIterator::RecordIterator(Heapfile *heapf) {
-    heapfile = heapf;
-    
- }
- RecordIterator::~RecordIterator() {
-
- }
-/**
- * Get the next non-empty record in the heap
- */
-Record RecordIterator::next() {
-    return -1;
-}
-
-/**
- * Check if the heap has anymore non-empty record
- */
- bool RecordIterator::hasNext() {
-    return false;
- }
-=======
-=======
->>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
 PageID alloc_page(Heapfile *heapfile) {
     // Initialize a fixed length page
     Page* page = new Page();
@@ -529,9 +462,67 @@ PageID alloc_page(Heapfile *heapfile) {
 
     // We use the new page's offset as the ID of the page
     return page_offset;
-<<<<<<< HEAD
 }
->>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
-=======
+
+
+/**
+ * DirectoryIterator constructor
+ */
+DirectoryIterator::DirectoryIterator(Heapfile* heapf) {
+    heapfile = heapf;
 }
->>>>>>> 1a7de38f19c6ca3d7df61f262e4a9d3350d5cd9f
+
+
+DirectoryIterator::~DirectoryIterator() {
+
+}
+
+bool DirectoryIterator::hasNext() {
+    return false;
+}
+
+Page* DirectoryIterator::next() {
+    return new Page();
+}
+
+
+ /**
+  * PageIterator constructor
+  */
+PageIterator::PageIterator(Heapfile* heapf, Page* directory) {
+    heapfile = heapf;
+}
+PageIterator::~PageIterator() {
+
+}
+bool PageIterator::hasNext() {
+    return false;
+}
+Page* PageIterator::next() {
+    return new Page();
+}
+
+
+
+/**
+ * RecordIterator constructor
+ */
+ RecordIterator::RecordIterator(Heapfile *heapf) {
+    heapfile = heapf;
+ }
+ RecordIterator::~RecordIterator() {
+
+ }
+/**
+ * Get the next non-empty record in the heap
+ */
+Record RecordIterator::next() {
+    return *(new Record());
+}
+
+/**
+ * Check if the heap has anymore non-empty record
+ */
+bool RecordIterator::hasNext() {
+    return false;
+}
