@@ -464,6 +464,15 @@ PageID alloc_page(Heapfile *heapfile) {
     return page_offset;
 }
 
+void read_page(Heapfile *heapfile, PageID pid, Page *page) {
+    // Since Page id is the offset of the page in the heapfile
+    _read_page_from_file(page, pid, heapfile->file_ptr);
+}
+
+void write_page(Page *page, Heapfile *heapfile, PageID pid) {
+    _write_page_to_file(page, pid, heapfile->file_ptr);
+}
+
 
 /**
  * DirectoryIterator constructor
