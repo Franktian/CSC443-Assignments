@@ -320,7 +320,9 @@ void _init_fixed_len_record_int_attr(Record* record, Offset attr1, Offset attr2,
  */
 void _init_directory_header(Record* record, Offset offset) {
     assert(offset >= 0);
-    _init_fixed_len_record_int_attr(record, offset, 0, DIRECTORY_RECORD_SIGNATURE);
+    // When initialized, the header has next directory pointer
+    // pointing to the first directory
+    _init_fixed_len_record_int_attr(record, offset, FIRST_DIRECTORY_OFFSET, DIRECTORY_RECORD_SIGNATURE);
 }
 
 /**
@@ -343,15 +345,34 @@ Offset _read_directory_record(Record* record, int index) {
     return value;
 }
 
+/* Set the directory record with some value */
+void _write_directory_record(Record* record, int index, Offset value) {
+    assert(index <= 3 && index >= 0);
+    memcpy((char*)record->at(0), &value, sizeof(Offset));
+}
+
 /**
  * Initialize a directory page and create the header record
  * A directory page is used for pointing to data pages
+ * The page has to be initialized with init_fixed_len_page before
  */
 void _init_directory_page(Page* page, Offset offset) {
     Record* header = new Record;
     _init_directory_header(header, offset);
     int ret = add_fixed_len_page(page, header);
     assert(ret != -1);
+}
+
+/* Read the last directory page and its header of the heapfile */
+void _read_last_directory(Page* directory_page, Record* header, Heapfile* heapfile) {
+    Offset last_directory_offset;
+    do {
+        init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
+        _read_page_from_file(directory_page, FIRST_DIRECTORY_OFFSET, heapfile->file_ptr);
+        read_fixed_len_page(directory_page, 0, header);
+        // Read the 2nd entry of the header
+        last_directory_offset = _read_directory_record(header, 1);
+    } while (last_directory_offset != FIRST_DIRECTORY_OFFSET);
 }
 
 void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
@@ -381,4 +402,64 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
 
     // Free the directory page being used for checking
     _free_page(directory_page);
+}
+
+PageID alloc_page(Heapfile *heapfile) {
+    // Initialize a fixed length page
+    Page* page = new Page();
+    init_fixed_len_page(page, heapfile->page_size, 1000); // TO-DO: extract this
+
+    // Find the last directory page in the heapfile
+    Page* directory_page = new Page();
+    Record* header = new Record();
+    _read_last_directory(directory_page, header, heapfile);
+    Offset directory_offset = _read_directory_record(header, 0);
+
+    // We don't need to check if this directory is full here,
+    // because we will create a new directory whenever the one we
+    // are using is full
+
+    // Create a page record to store in this directory
+    Record* page_record = new Record();
+    // A new page is always added to the end of the heapfile.
+    int page_offset = _get_eof_offset(heapfile->file_ptr);
+    _init_directory_record(page_record, page_offset, page->capacity);
+
+    // Write the page to heapfile
+    _write_page_to_file(page, page_offset, heapfile->file_ptr);
+
+    // Add the page record to the directory page
+    int ret = add_fixed_len_page(directory_page, page_record);
+    assert(ret != -1);
+
+    // Check if the current directory is full
+    int num_free_slots = fixed_len_page_freeslots(directory_page);
+    if (num_free_slots == 0) {
+        // If full, we need to create a new directory
+        Page* new_directory_page = new Page();
+        // Create a fixed length page first
+        init_fixed_len_page(new_directory_page, heapfile->page_size, _calc_directory_page_slot_size());
+        // Initialize this page as a directory page (adding header)
+        int new_directory_offset = _get_eof_offset(heapfile->file_ptr);
+        _init_directory_page(new_directory_page, new_directory_offset);
+        // Write the new directory page to file
+        _write_page_to_file(new_directory_page, new_directory_offset, heapfile->file_ptr);
+
+        // Update the header of the previous directory
+        _write_directory_record(header, 0, new_directory_offset);
+        write_fixed_len_page(directory_page, 0, header);
+
+        // Free the new directory page used
+        _free_page(new_directory_page);
+    }
+
+    // Write the directory page to file
+    _write_page_to_file(directory_page, directory_offset, heapfile->file_ptr);
+
+    // Free resource used
+    _free_page(page);
+    _free_page(directory_page);
+
+    // We use the new page's offset as the ID of the page
+    return page_offset;
 }

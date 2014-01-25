@@ -34,6 +34,7 @@ typedef struct {
     void *data;
     int page_size;
     int slot_size;
+    int capacity;
 } Page;
 
 /**
@@ -103,6 +104,7 @@ typedef struct {
 
 /**
  * Initalize a heapfile to use the file and page size given.
+ * If the file is a new heapfile, create the first directory page
  */
 void init_heapfile(Heapfile *heapfile, int page_size, FILE *file);
 
