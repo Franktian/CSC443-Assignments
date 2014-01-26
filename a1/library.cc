@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cassert>
+#include <limits>
 
 using namespace std;
 
@@ -297,6 +298,10 @@ inline int _calc_directory_page_slot_size() {
     return sizeof(Offset)*3;
 }
 
+inline int _calc_directory_page_capacity(int page_size) {
+    return page_size / _calc_directory_page_slot_size();
+}
+
 /**
  * Initialize a fixed length record with 3 attributes
  */
@@ -357,37 +362,109 @@ void _write_directory_record(Record* record, int index, Offset value) {
  * The page has to be initialized with init_fixed_len_page before
  */
 void _init_directory_page(Page* page, Offset offset) {
-    Record* header = new Record;
+    Record* header = new Record();
     _init_directory_header(header, offset);
     int ret = add_fixed_len_page(page, header);
     assert(ret != -1);
 }
 
-/* Read the last directory page and its header of the heapfile */
-void _read_last_directory(Page* directory_page, Record* header, Heapfile* heapfile) {
-    Offset last_directory_offset;
+/**
+ * Locate the directory given the page offset
+ * The directory page must be initialized before passed in
+ * Return the directory offset of the located directory
+ */
+Offset _locate_directory(Page* directory_page, Record* header, Offset page_offset, Heapfile* heapfile) {
+    Offset directory_offset = FIRST_DIRECTORY_OFFSET;
+    Offset curr_directory_offset;
     do {
-        init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
-        _read_page_from_file(directory_page, FIRST_DIRECTORY_OFFSET, heapfile->file_ptr);
+        _read_page_from_file(directory_page, directory_offset, heapfile->file_ptr);
         read_fixed_len_page(directory_page, 0, header);
-        // Read the 2nd entry of the header
-        last_directory_offset = _read_directory_record(header, 1);
-    } while (last_directory_offset != FIRST_DIRECTORY_OFFSET);
+        curr_directory_offset = directory_offset;
+        // Get the offset of the next directory
+        directory_offset = _read_directory_record(header, 1);
+        // If the offset of the next directory is greater than the page offset
+        // we have found the directory of the page
+        if (directory_offset > page_offset) {
+            break;
+        }
+        // Else we will keep looking
+    } while (directory_offset != FIRST_DIRECTORY_OFFSET);
+    // The loop terminates at the last directory (or the only directory),
+    // where the page would belong to.
+    return curr_directory_offset;
+}
+
+/**
+ * Read the last directory page and its header of the heapfile
+ * The directory page must be initialized before passed in.
+ * Return the slot number of the page record in the directory
+ */
+void _read_last_directory(Page* directory_page, Record* header, Heapfile* heapfile) {
+    Offset eof = _get_eof_offset(heapfile->file_ptr);
+    _locate_directory(directory_page, header, eof, heapfile);
+}
+
+/* Locate and read the page record in a directory given the page ID */
+int _read_page_record(Page* directory_page, Record* page_record, PageID pid, Heapfile* heapfile) {
+    // The directory page must be initialized before passed in
+
+    // Loop through the directory to find our page record
+    int directory_capacity = fixed_len_page_capacity(directory_page);
+    int curr_slot = 1; // 0 is the header, just ignore
+    Offset curr_page_offset;
+    do {
+
+        read_fixed_len_page(directory_page, curr_slot, page_record);
+        curr_page_offset = _read_directory_record(page_record, 0);
+        if (curr_page_offset == pid) {
+            break;
+        }
+        curr_slot++;
+    } while (curr_slot < directory_capacity);
+    
+    // Return the slot number of the page record
+    return curr_slot;
+}
+
+/* Get the offset of a page given its page ID */
+Offset _locate_page(PageID pid, Heapfile *heapfile) {
+    Record* page_record = new Record();
+    Record* header = new Record();
+    Page* directory_page = new Page();
+
+    // First we need to find the directory that contains the page with pid
+    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
+    _locate_directory(directory_page, header, pid, heapfile);
+
+    // Get the page record from directory
+    _read_page_record(directory_page, page_record, pid, heapfile);
+
+    // Get the offset from the page record in the directory
+    Offset page_offset = _read_directory_record(page_record, 0);
+
+    // Just to make sure our current model is working
+    assert(page_offset == pid);
+
+    _free_page(directory_page);
+
+    return page_offset;
 }
 
 void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
     heapfile->file_ptr = file;
     heapfile->page_size = page_size;
 
+    // Get stuff we need to use
+    Page* directory_page = new Page();
+    Record* header = new Record();
+
     // Check if this is a new heapfile by checking if it has a directory
     // page at the beginning of the file with a valid directory header,
     // which contains the signature number. 
-    Page* directory_page = new Page();
     init_fixed_len_page(directory_page, page_size, _calc_directory_page_slot_size());
     _read_page_from_file(directory_page, FIRST_DIRECTORY_OFFSET, file);
     
     // Read the header record at the first slot of the page
-    Record* header = new Record();
     read_fixed_len_page(directory_page, 0, header);
 
     // If the header was not correctly parsed, then it is a new heapfile
@@ -412,6 +489,7 @@ PageID alloc_page(Heapfile *heapfile) {
     // Find the last directory page in the heapfile
     Page* directory_page = new Page();
     Record* header = new Record();
+    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
     _read_last_directory(directory_page, header, heapfile);
     Offset directory_offset = _read_directory_record(header, 0);
 
@@ -465,12 +543,50 @@ PageID alloc_page(Heapfile *heapfile) {
 }
 
 void read_page(Heapfile *heapfile, PageID pid, Page *page) {
-    // Since Page id is the offset of the page in the heapfile
-    _read_page_from_file(page, pid, heapfile->file_ptr);
+    // Here we are not assuming the page ID is the same as 
+    // the page offset, so we need to locate the page record
+    // first, and get the offset from there
+
+    // If we change the definition of PageID in the future,
+    // we just need to change the logic in _locate_page
+    
+    Offset page_offset = _locate_page(pid, heapfile);
+
+    // Read the page at the offset position
+    _read_page_from_file(page, page_offset, heapfile->file_ptr);
 }
 
 void write_page(Page *page, Heapfile *heapfile, PageID pid) {
-    _write_page_to_file(page, pid, heapfile->file_ptr);
+    Record* page_record = new Record();
+    Record* header = new Record();
+    Page* directory_page = new Page();
+
+    // First we need to find the directory that contains the page with pid
+    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
+    Offset directory_offset = _locate_directory(directory_page, header, pid, heapfile);
+
+    // Get the page record from directory
+    int page_record_slot = _read_page_record(directory_page, page_record, pid, heapfile);
+
+    // Get the offset from the page record in the directory
+    Offset page_offset = _read_directory_record(page_record, 0);
+
+    // Just to make sure our current model is working
+    assert(page_offset == pid);
+
+    // Write the page at the offset position
+    _write_page_to_file(page, page_offset, heapfile->file_ptr);
+
+    // Update the page record
+    int num_free_slots = fixed_len_page_freeslots(page);
+    _write_directory_record(page_record, 1, num_free_slots);
+    write_fixed_len_page(directory_page, page_record_slot, page_record);
+
+    // Update the directory page
+    _write_page_to_file(directory_page, directory_offset, heapfile->file_ptr);
+
+    // Free
+    _free_page(directory_page);
 }
 
 
