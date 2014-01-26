@@ -124,55 +124,68 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page);
 void write_page(Page *page, Heapfile *heapfile, PageID pid);
 
 
+
+
 /**
  * The directory iterator for a heapfile of multiple directories
  */
 class DirectoryIterator {
-public:
-	DirectoryIterator(Heapfile* heapf);
-	~DirectoryIterator();
-	bool hasNext();
+	public:
+		DirectoryIterator(Heapfile* heapfile);
+		~DirectoryIterator();
 
-	// Return the next directory page
-	Page* next();
+		// Check whether there is another directory
+		bool hasNext();
 
-private:
-	Heapfile* heapfile;
+		// Return the next directory page
+		Page* next();
+
+	private:
+		Heapfile* heapfile;
+		Page* currentDirectory;
 };
 
 /* Page iterator class for a directory 
  * Used to iterate through all pages in a directory
  */
 class PageIterator {
-public:
-	PageIterator(Heapfile* heapfile, Page* directory);
-	~PageIterator();
-	bool hasNext();
-	
-	// Return the next data page
-	Page* next();
+	public:
+		PageIterator(Heapfile* heapfile, Page* directory);
+		~PageIterator();
+		bool hasNext();
+		
+		// Return the next page
+		Page* next();
 
-private:
-	Heapfile* heapfile;
+	private:
+		Heapfile* heapfile;
+		Page* directory;
+		Page* currentPage;
 };
+
+
 
 /* Record iterator class for iterating through 
  * all records in the heap file
  */
 class RecordIterator {
-public:
-    RecordIterator(Heapfile *heapfile);
-    ~RecordIterator();
+	public:
+	    RecordIterator(Heapfile *heapfile);
+	    ~RecordIterator();
 
-    // Get the next non-empty record in the heap
-    Record next();
-    
-    // Check if the heap has anymore non-empty record
-    bool hasNext();
+	    // Get the next non-empty record in the heap
+	    Record next();
+	    
+	    // Check if the heap has anymore non-empty record
+	    bool hasNext();
 
-private:
-	// The heap file we are iterating
-	Heapfile* heapfile;
+	private:
+		// The heap file we are iterating
+		Heapfile* heapfile;
+
+		// The directory & page iterator
+		DirectoryIterator* directoryIterator;
+		PageIterator* pageIterator;
 };
 
 #endif
