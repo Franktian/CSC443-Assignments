@@ -4,6 +4,9 @@
 #include <vector>
 #include <cstdio>
 
+#define SCHEMA_ATTRIBUTE_LEN 10
+#define SCHEMA_ATTRIBUTES_NUM 100
+
 typedef const char* V;
 typedef std::vector<V> Record;
 // The byte offset position in a file
@@ -68,7 +71,7 @@ void write_fixed_len_page(Page *page, int slot, Record *r);
 /**
  * Read a record from the page from a given slot.
  */
-void read_fixed_len_page(Page *page, int slot, Record *r);
+bool read_fixed_len_page(Page *page, int slot, Record *r);
 
 
 /**
