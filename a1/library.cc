@@ -729,6 +729,19 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
     _free_page(directory_page);
 }
 
+// Parse the directory from a heapfile
+void locate_directory(Heapfile *heapfile, Page *directory) {
+    init_fixed_len_page(directory, heapfile->page_size, _calc_directory_page_slot_size());
+    _read_page_from_file(directory, FIRST_DIRECTORY_OFFSET, heapfile->file_ptr);
+    return;
+}
+
+// Parse the header from directoy
+void locate_header(Page *directory, Record *header) {
+    read_fixed_len_page(directory, 0, header);
+    return;
+}
+
 PageID alloc_page(Heapfile *heapfile) {
     // Initialize a fixed length page
     Page* page = new Page();
