@@ -15,7 +15,7 @@ int fixed_len_sizeof(Record *record) {
     
     // Record pointer is NULL, simply return size of 0.
     if (!record) {
-	cout << "ERROR fixed_len_sizeof(): Invalid input parameter - Record is null!" << endl;
+        cout << "ERROR fixed_len_sizeof(): Invalid input parameter - Record is null!" << endl;
         return 0;
     }
 
@@ -37,7 +37,7 @@ void fixed_len_write(Record *record, void *buf) {
 
     // Record pointer or Buffer pointer is NULL - Do Nothing.
     if (!record || !buf) {
-	cout << "ERROR fixed_len_write(): Invalid Input parameters!" << endl;
+        cout << "ERROR fixed_len_write(): Invalid Input parameters!" << endl;
         return;
     }
 
@@ -47,11 +47,11 @@ void fixed_len_write(Record *record, void *buf) {
     for (int i=0; i<numAttr; i++) {
         // Iterate over the all the attributes and copy them into the buf
         memcpy (position, record->back(), SCHEMA_ATTRIBUTE_LEN);
-	record->pop_back();
-	if (LIB_DEBUG) {
-	    char buffer[1000];
-	    strncpy (buffer, record->at(i), SCHEMA_ATTRIBUTE_LEN);
-	    cout << "###### Serializing Attribute: " << record->at(i) << " ######" << endl;
+    	record->pop_back();
+    	if (LIB_DEBUG) {
+    	    char buffer[1000];
+    	    strncpy (buffer, record->at(i), SCHEMA_ATTRIBUTE_LEN);
+    	    cout << "###### Serializing Attribute: " << record->at(i) << " ######" << endl;
         }
         position += SCHEMA_ATTRIBUTE_LEN;
     }
@@ -77,13 +77,14 @@ void fixed_len_read(void *buf, int size, Record *record) {
     assert(size == fixed_len_sizeof(record));
     for (int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++) {
         // SCHEMA_ATTRIBUTE_LEN is fix = 10 bytes
-	char *buffer = new char[10];
+        char *buffer = new char[10];
         strncpy(buffer, (char*)buf + SCHEMA_ATTRIBUTE_LEN * i, SCHEMA_ATTRIBUTE_LEN);
         if (LIB_DEBUG)
 	    cout << "Content : " << buffer << endl;
         
-	record->at(i) = buffer;
-        if (LIB_DEBUG) cout << (char*) record->at(i) << endl;
+        record->at(i) = buffer;
+        if (LIB_DEBUG)
+            cout << (char*) record->at(i) << endl;
     }
     return;
 }
@@ -224,15 +225,13 @@ int fixed_len_page_freeslots(Page *page) {
     int i = 0;
     char *directory = (char*) page->data;
     while (i < page->capacity) {
-
-	// Increment the occupied slot counter if directory byte is 1
+        // Increment the occupied slot counter if directory byte is 1
         if ( *directory == 1 ) 
             occupiedSlots++;
         // Advance to next directory indicator byte
-	directory++;
+        directory++;
         i++;
     }
-
     // Return the number of free slots
     return page->capacity - occupiedSlots;
 }
@@ -329,12 +328,11 @@ int findAvailableSlot(Page *page) {
     int slot = 0;
     // Iterate over the directory to find the first non-occupied slot
     for (int i = 0; i < page->capacity; i++) {
-   	if (directory[i] != 1) {
-	    slot = i; // Find the available slot
-	    break;
+       	if (directory[i] != 1) {
+    	    slot = i; // Find the available slot
+    	    break;
         }     
     }
-
     return slot;
 }
 
@@ -375,14 +373,14 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
     if (!page || !page->data || !r) {
         cout << "ERROR write_fixed_len_page(): NULL pointers passed in!" << endl;
         return;
-    }   
-       
+    }
+
     int numSlots = page->capacity;
     // Slot input is invalid
     if (slot >= numSlots || slot < 0) {
         cout << "ERROR write_fixed_len_page(): Invalid slot number!" << endl;
         return;
-    }   
+    }
        
     // Find the location to write
     char *data = (char*)page->data + page->capacity + page->slot_size*slot;
@@ -496,14 +494,14 @@ bool read_fixed_len_page(Page *page, int slot, Record *r) {
     }
     // Slot is empty
     if (((char*)page->data)[slot] != 1) {
-	cout << "ERROR read_fixed_len_page(): slot position is empty!" << endl;
-	return false;
+    	cout << "ERROR read_fixed_len_page(): slot position is empty!" << endl;
+    	return false;
     }
 
     // Find the location to read
     char *data = (char*)page->data + page->capacity + page->slot_size*slot;
     fixed_len_read((void*)data, fixed_len_sizeof(r), r);
-    
+
     return true;
 }
 
@@ -545,7 +543,7 @@ void _free_page(Page* page) {
 
 // Return the size of the serialized directory page record in bytes
 inline int _calc_directory_page_slot_size() {
-    return sizeof(Offset)*3;
+    return sizeof(Offset) * 3;
 }
 
 inline int _calc_directory_page_capacity(int page_size) {
