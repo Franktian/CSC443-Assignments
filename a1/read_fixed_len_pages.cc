@@ -19,7 +19,6 @@ int main(int argc, char **argv) {
         exit(1);
     }   
 
-    //size_t pageSize = atoi(argv[2]);
     int pageSize = atoi(argv[2]);
 
     FILE *csvf = stdout; // Out put the record to terminal
@@ -32,7 +31,7 @@ int main(int argc, char **argv) {
     cout << "Start the timer" << endl;
     struct timeb _t;
     ftime(&_t);
-    long init = _t.time * 1000 + _t.millitm;
+    long start = _t.time * 1000 + _t.millitm;
 
     int pageCount = 0;
     int recordCount = 0;
@@ -54,8 +53,8 @@ int main(int argc, char **argv) {
                 Record r;
 		// Initialize the record vector - 100 attributes of empty strings.
 		// Otherwise, it causes weird errors.
-                for(int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++){
-                         V content = "          ";
+                for(int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++) {
+                         char content[10] = "         ";
                          r.push_back(content);
                  }   
 
@@ -63,9 +62,9 @@ int main(int argc, char **argv) {
 		// read_fixed_len_page() return false means the slot is empty.
                 if (read_fixed_len_page(&page, i, &r)) {
 		    // Parse the serialized data and print it to the terminal.
-                    for(int i = 0; i < r.size(); i++){
-			// Last attribute - do not append comma but a new line charater
-                        if(i == r.size() - 1){
+                    for(int i = 0; i < r.size(); i++) {
+			// Last attribute - append a new line charater
+                        if(i == r.size() - 1) {
 			    cout << (char*) r.at(i) << endl;
                         } 
 		        else {
@@ -83,8 +82,8 @@ int main(int argc, char **argv) {
     // Stop the timer
     cout << "Stop the timer" << endl;
     ftime(&_t);
-    long done = _t.time * 1000 + _t.millitm;
-    long time = done-init;
+    long finish = _t.time * 1000 + _t.millitm;
+    long time = finish - start;
 
     printf("NUMBER OF RECORDS: %d\n", recordCount);
     printf("NUMBER OF PAGES: %d\n", pageCount);

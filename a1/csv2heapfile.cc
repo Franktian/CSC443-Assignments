@@ -1,41 +1,135 @@
-#include "library.h"
-#include <stdio.h>
 #include <iostream>
+#include <stdlib.h>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <sys/timeb.h>
+
+#include "library.h"
 
 using namespace std;
 
-void generate_random_csv_file(int record_size, int num_record, char* path_to_csv_file) {
+/** 
+ * csv2heapfile function. 
+ */ 
 
-}
-
-void csv2heapfile(char* path_to_csv_file, char* path_to_heapfile, int page_size) {
-    
-    FILE* csv = fopen(path_to_csv_file, "r");
-    if (!csv) {
-    	cout << "ERROR csv2heapfile(): Input CSV file does not exist!" << endl;
-        return;
+int main( int argc, const char* argv[] )
+{
+    // Process the input parameters.
+    if (argc != 4) {
+	cout << "ERROR: invalid input parameters!" << endl;
+        cout << "Please put: <csv_file> <heapfile> <page_size>" << endl;
+        exit(1);
     }
-    FILE* output = fopen(path_to_heapfile, "w");
-    Heapfile* heapfile = new Heapfile();
-    // init_heapfile(heapfile, page_size, output);
 
-    // for each line in cdv file 
-    // {
-    //     for each record r1 in the line
+    const char* csvFileName = argv[1];
+    char* heapfileName = (char*)argv[2];
+    int page_size =  atoi((argv[3]));
 
-    //          page1 = find_free_page_on_heapfile (minSize)
-    //          if page1 is not found
-    //              page1 = alloc_page(heapfile)
-    //          read_page(heap file, page1, page)
-    //          add_fixed_len_page(page, r1) — 
-    //          slot = find the slot
-    //           — write_fixed_len_page(page, slot, r1) — call serialization function to make the record a series of bytes.
-    //          write_page(page, heap file, page1)
-             
-    // }
-}
+    Heapfile *hFile = new Heapfile();
+    if (!hFile) {
+   	cout << "ERROR: dynamic allocation for the Heapfile object failed!" << endl;
+	exit(1);
+    }
 
-int main(int argc, char* argv[]) {
+    // Truncate file to zero length or create a file for writing
+    // READ & WRITE
+    FILE *pFile = fopen(heapfileName, "w+");
 
-	return 0;
+    init_heapfile(hFile, page_size, pFile);
+
+    Page* page = new Page();
+
+    // Initialize page
+    init_fixed_len_page(page, page_size, RECORD_SIZE);
+
+    // Open the csv file
+    ifstream data; // csv file handler
+    data.open(csvFileName);
+    string line; // contains the record read from csv file.
+
+    // Record Start Time 
+    cout << "Start the timer" << endl;
+    struct timeb _t;                
+    ftime(&_t);
+    long start = _t.time * 1000 + _t.millitm;        
+
+    int index = 0;        
+    int numRecs = 0;        
+    int numPages = 0;
+    while(getline(data,line)) {
+
+        stringstream lineStream(line); // lineStream is used to process the record read from the csv file
+        string dataField; // contains the attribute of the record.
+
+        // Initialize a record vector - create 100 attributes of empty strings.
+        Record record;
+        for(int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++) {
+            char content[10] = "         ";
+            record.push_back(content);
+        }   
+	
+        // Process the record in the csv file.
+	int slot = 0;
+        while(getline(lineStream,dataField,',')) {
+            char* attribute = new char[strlen(dataField.c_str())];
+            strncpy(attribute, dataField.c_str(), strlen(dataField.c_str()));
+ 	    record.at(slot++) = attribute;
+            //record.push_back(attribute);
+        }
+
+        // Write the record to the page
+        write_fixed_len_page(page, index++, &record);
+        numRecs++;
+
+        // Page is full, allocate a new page and write the current one back to heapfile
+        if (index == page->capacity) {
+	    
+            PageID id = alloc_page(hFile);
+            if (id != -1) {
+                write_page(page, hFile, id);
+            } 
+	    else {
+                cout << "ERROR: invalid page ID! Something wrong with alloc_page() function!" << endl;
+		exit(1);
+            }
+
+            // Initialize new page
+            delete page;
+            page = new Page();
+            init_fixed_len_page(page, page_size, RECORD_SIZE);
+            index = 0;
+            numPages++;
+        }
+    }
+  
+    // Remaining page now written yet, write the last page to file
+    if(index != 0) {
+
+        PageID id = alloc_page(hFile);
+        if (id != -1) {
+            write_page(page, hFile, id);
+        } 
+        else {
+            cout << "ERROR: invalid page ID! Something wrong with alloc_page() function!" << endl;
+	    exit(1);
+        }
+        numPages++;
+    }
+
+    delete page;
+    data.close();
+    fclose(pFile);
+
+    // Stop the timer
+    cout << "Stop the timer" << endl;
+    ftime(&_t);
+    long finish = _t.time * 1000 + _t.millitm;
+    long _time = finish - start;
+
+    cout << "NUMBER OF RECORDS : " << numRecs << endl;
+    cout << "NUMBER OF PAGES : " << numPages << endl;
+    cout << "TIME : " << _time << " milliseconds" << endl;
+
+    return 0;
 }
