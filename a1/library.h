@@ -140,15 +140,16 @@ void locate_header(Page *directory, Record *header);
  */
 class DirectoryIterator {
 	public:
-		DirectoryIterator(Heapfile* heapf);
+		DirectoryIterator(Heapfile* heapfile);
 		~DirectoryIterator();
 		bool hasNext();
 
 		// Return the next directory page
 		Page* next();
-
 	private:
 		Heapfile* heapfile;
+		Page* directory;
+		Offset current_offset;
 };
 
 /* Page iterator class for a directory 
