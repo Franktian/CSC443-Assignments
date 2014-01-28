@@ -166,13 +166,11 @@ public:
 	bool hasNext();
 
 	// Return the next directory page
-	Page* next();
+	char* next();
 private:
 	Heapfile* heapfile;
-	Page* directory;
-	Record *header;		// Points to the header record of the current directory
-	Offset current_offset;  // Offset of the current directory in the heapfile
-	Offset next_offset;
+	char* directory;
+	DirectoryHeader *header;		// Points to the header record of the current directory
 };
 
 /**
@@ -182,34 +180,38 @@ private:
 class PageRecordIterator {
 public:
 	PageRecordIterator(Page *page);
+	~PageRecordIterator();
 	bool hasNext();
 	Record* next();
-	Record* get_current();  // Get the current record in the iterator
 private:
 	Record* current_record;
+	Record* next_record;
 	Page *page;
-	int slot;  // Indicate the current slot number
+	int curr_slot;  // Indicate the current slot number
+	int next_slot;
 	int capacity;  // Indicate the capacity of the page
+	bool validNext;
 };
 
 /* Page iterator class for a directory 
  * Used to iterate through all pages in a directory
  */
-class PageIterator {
+class DirectoryRecordIterator {
 public:
-	PageIterator(Heapfile* heapfile, Page* directory);
-	~PageIterator();
+	DirectoryRecordIterator(Heapfile* heapfile, char* directory);
+	~DirectoryRecordIterator();
 	bool hasNext();
 	
 	// Return the next data page
-	Page* next();
+	DirectoryRecord* next();
 
 private:
 	Heapfile* heapfile;
-	Page* directory;
-	Page* current_page;
-	PageRecordIterator *iterator;	// iterates through the records of directory page
-	Offset next_offset;		// use to read the data page from the heapfile
+	char* directory;
+	DirectoryRecord* directory_record;
+	int curr_slot;
+	int directory_capacity;
+	bool validNext;
 };
 
 /* Record iterator class for iterating through 
@@ -229,9 +231,16 @@ public:
 private:
 	// The heap file we are iterating
 	Heapfile* heapfile;
-	DirectoryIterator *directoryIterator;
-	PageIterator *pageIterator;
-	PageRecordIterator *pageRecordIterator;
+	
+	DirectoryIterator *directory_itr;
+	DirectoryRecordIterator *directory_record_itr;
+	PageRecordIterator *page_itr;
+	
+	bool validNext;
+	DirectoryHeader* curr_dir_header;
+	DirectoryRecord* curr_dir_record;
+	char* curr_dir;
+	Page* curr_page;
 };
 
 #endif
