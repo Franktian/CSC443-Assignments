@@ -31,20 +31,20 @@ int main( int argc, const char* argv[] )
     FILE *csvFile = fopen(csv_file, "w");
     if (!csvFile) {
         cout << "ERROR: failed to open the csv file!" << endl;
-	exit(1);
+        exit(1);
     }
 
     //Open heapfile to be read.
     FILE *heapFile = fopen(heapfile, "r+");
     if (!heapFile) {
         cout << "ERROR: failed to open the heapfile!" << endl;
-	exit(1);
+        exit(1);
     }
 
     Heapfile *pHeapfile = new Heapfile;
     if (!pHeapfile) {
         cout << "ERROR: heap allocation of the heapfile failed!" << endl;
-	exit(1);
+        exit(1);
     }
     pHeapfile->file_ptr = heapFile;
     pHeapfile->page_size = page_size;
@@ -57,11 +57,13 @@ int main( int argc, const char* argv[] )
 
     int pageID;
     int numRecords = 0;
+    int numPages = 0;
     //int firstRecord = 1;
 
     PageIterator* iterator = new PageIterator(pHeapfile);
     while(iterator->hasNext()) {
 
+        // Get the next page ID
         pageID = iterator->next();
 
         // Initialize the record vector - 100 attributes of empty strings.
@@ -73,52 +75,32 @@ int main( int argc, const char* argv[] )
         }
 
         // Initialize a page for above records
-        Page* page = new Page;
-	if (!page) {
-	    cout << "ERROR: dynamic allocation of the page failed!" << endl;
-	    exit(1);
-        }
+        Page* page = new Page();
+        
+        // Read the page from the heapfile
         init_fixed_len_page(page, page_size, RECORD_SIZE);
         read_page(pHeapfile, pageID, page);
-        
-        // Empty page - means the processing is finished and get out of the loop.
-        if (!*(char *)page->data) 
-	    break;
 
 	    // Process the page and insert the records into CSV file.
         for (int slot = 0; slot < page->capacity; slot++) {
-
             // Read the page into records
-            bool success = read_fixed_len_page(page, slot, &record, SCHEMA_ATTRIBUTE_LEN,
-                SCHEMA_ATTRIBUTES_NUM);
-            // Read an empty page? 
-	    if (!success) {
-		if (HEAP_CSV_DEBUG) 
-		    cout << "The slot of the page is empty!" << endl;
-		continue; 
-	    }
-
-            numRecords++;
-            // Write the record to the CSV file.
-            //if (firstRecord) {
-            //    firstRecord = 0;
-            //} 
-	    //else {
-            //    fprintf(csvFile, "\n");
-            //}
-           
+            bool success = read_fixed_len_page(page, slot, &record, 
+                SCHEMA_ATTRIBUTE_LEN, SCHEMA_ATTRIBUTES_NUM);
+            
+            if (!success) break;
+            
             // Write the record to the CSV file.
             for (int i = 0; i < record.size(); i++) {
                 // Append the new line character to the last attribute.
-                if(i == record.size() - 1) {
-                    fprintf(csvFile, "%s", record.at(i));
-                } 
-		else {
+                if (i == record.size() - 1) {
                     fprintf(csvFile, "%s,\n", record.at(i));
-		    //fprintf(csvFile, "\n");
+                } else {
+                    fprintf(csvFile, "%s", record.at(i));
                 }
             }
+            numRecords++;
         }
+        numPages++;
     }
 
     // Finished converting, close the files.
@@ -132,7 +114,7 @@ int main( int argc, const char* argv[] )
     long _time = finish - start;
 
     cout << "NUMBER OF RECORDS: " << numRecords << "\n";
-    cout << "NUMBER OF PAGES: " << pageID << "\n";
+    cout << "NUMBER OF PAGES: " << numPages << "\n";
     cout << "TIME : " << _time << " milliseconds\n";
 
     return 0;
