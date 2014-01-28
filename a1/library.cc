@@ -489,11 +489,10 @@ bool read_fixed_len_page(Page *page, int slot, Record *r, int attrLen = SCHEMA_A
     // cout << page->capacity << endl;
     if (LIB_DEBUG) 
         cout << "NUM OF SLOTS: " << numSlots << " " << page->slot_size << endl;
+    
     // Slot input is invalid
-    if (slot+1 > numSlots || slot < 0) {
-        cout << "ERROR read_fixed_len_page(): Invalid slot number!" << endl;
-        exit(1);
-    }
+    assert(slot < numSlots && slot > 0);
+    
     // Slot is empty
     if (((char*)page->data)[slot] != 1) {
     	// cout << "ERROR read_fixed_len_page(): slot position is empty!" << endl;
@@ -848,7 +847,7 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid) {
     _write_directory_record(record, directory, slot);
 
     // Update the directory page
-    _write_directory_to_file(directory, directory_offset, heapfile);    
+    _write_directory_to_file(directory, directory_offset, heapfile);
 
     // Free
     delete[] directory;
@@ -919,11 +918,12 @@ char* DirectoryIterator::next() {
 
     // Get the next non-empty record in the page
     while (this->next_slot < this->capacity) {
-        this->next_slot ++;
         if (read_fixed_len_page(this->page, this->next_slot, this->next_record)) {
             this->validNext = true;
+            this->next_slot ++;
             return true;
         }
+        this->next_slot ++;
     }
     return this->validNext = false;
  }
@@ -948,7 +948,7 @@ DirectoryRecordIterator::DirectoryRecordIterator(Heapfile* heapfile, char* direc
     this->heapfile = heapfile;
     this->directory = directory;
     this->directory_record = new DirectoryRecord();
-    this->curr_slot = 1; // the 0th slot is the header
+    this->curr_slot = 0; // the 0th slot is the header
     this->directory_capacity = _directory_page_capacity(heapfile->page_size);
     this->validNext = false;
 }
@@ -966,7 +966,7 @@ bool DirectoryRecordIterator::hasNext() {
     }
     while (curr_slot < this->directory_capacity) {
         curr_slot++;
-        _read_directory_record(this->directory_record, directory, curr_slot + 1);
+        _read_directory_record(this->directory_record, directory, curr_slot);
         if (this->directory_record->page_offset != EMPTY_PAGE_OFFSET) {
             return this->validNext = true;
         }

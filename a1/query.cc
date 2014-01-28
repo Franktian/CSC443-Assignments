@@ -66,8 +66,7 @@ int main( int argc, const char* argv[] )
     // *** while(iterator->hasNext){
     while(iterator->hasNext()) {
         //*** iterate_record(iterator);  
-        currentRecord = iterator->next();  
-    
+        currentRecord = iterator->next();
         // *** read_current_record(iterator, &cur);
         // A1 is the first attribute A1 = cur.at(0)
         // WHERE Clause Processing: A1 >= start AND A1 <= end
