@@ -730,16 +730,8 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
 }
 
 // Parse the first directory from a heapfile
-void locate_directory(Heapfile *heapfile, Page *directory) {
-    init_fixed_len_page(directory, heapfile->page_size, _calc_directory_page_slot_size());
-    _read_page_from_file(directory, FIRST_DIRECTORY_OFFSET, heapfile->file_ptr);
-    return;
-}
-
-// Parse the header from directoy
-void locate_header(Page *directory, Record *header) {
-    read_fixed_len_page(directory, 0, header);
-    return;
+void _locate_first_directory(Heapfile *heapfile, Page *directory, Record *header) {
+    _locate_directory(directory, header, FIRST_DIRECTORY_OFFSET, heapfile);
 }
 
 PageID alloc_page(Heapfile *heapfile) {
@@ -856,7 +848,10 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid) {
  */
 DirectoryIterator::DirectoryIterator(Heapfile* heapfile) {
     this->heapfile = heapfile;
-    locate_directory(this->heapfile, this->directory);
+    this->directory = new Page();
+    this->header = new Record();
+    init_fixed_len_page(this->directory, this->heapfile->page_size, _calc_directory_page_slot_size());
+    _locate_first_directory(this->heapfile, this->directory, this->header);
     this->current_offset = FIRST_DIRECTORY_OFFSET;
 }
 
@@ -866,30 +861,27 @@ DirectoryIterator::~DirectoryIterator() {
 }
 
 bool DirectoryIterator::hasNext() {
-    Record *header = new Record();
-    locate_header(this->directory, header);
-    Offset offset = _read_directory_record(header, 1);
-    return offset > this->current_offset;
+    this->next_offset = _read_directory_record(header, 1);
+    return this->next_offset > this->current_offset;
 }
 
 Page* DirectoryIterator::next() {
     assert(this->hasNext());
-    Record *header = new Record();
-    locate_header(this->directory, header);
-    Offset offset = _read_directory_record(header, 1);
-    Page *nextDirectory = new Page();
-    _read_page_from_file(nextDirectory, offset, this->heapfile->file_ptr);
-    this->directory = nextDirectory;
-    this->current_offset = offset;
-    return nextDirectory;
+    _read_page_from_file(this->directory, this->next_offset, this->heapfile->file_ptr);
+    this->current_offset = this->next_offset;
+    return this->directory;
 }
 
  /**
   * PageIterator constructor
   */
-PageIterator::PageIterator(Heapfile* heapf, Page* directory) {
-    heapfile = heapf;
+PageIterator::PageIterator(Heapfile* heapfile, Page* directory) {
+    this->heapfile = heapfile;
+    this->directory = directory;
+    this->current_page = new Page();
+    
 }
+
 PageIterator::~PageIterator() {
 
 }

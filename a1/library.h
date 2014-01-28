@@ -127,15 +127,6 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page);
 void write_page(Page *page, Heapfile *heapfile, PageID pid);
 
 /**
- * Locate the first directory of a heapfile
- */
-void locate_directory(Heapfile *heapfile, Page *directory);
-/**
- * Locate the header of a directory
- */ 
-void locate_header(Page *directory, Record *header);
-
-/**
  * The directory iterator for a heapfile of multiple directories
  */
 class DirectoryIterator {
@@ -150,6 +141,8 @@ class DirectoryIterator {
 		Heapfile* heapfile;
 		Page* directory;
 		Offset current_offset;
+		Record *header;
+		Offset next_offset;
 };
 
 /* Page iterator class for a directory 
@@ -166,6 +159,8 @@ class PageIterator {
 
 	private:
 		Heapfile* heapfile;
+		Page* directory;
+		Page* current_page;
 };
 
 /* Record iterator class for iterating through 
