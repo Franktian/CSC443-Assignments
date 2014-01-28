@@ -734,6 +734,10 @@ void _locate_first_directory(Heapfile *heapfile, Page *directory, Record *header
     _locate_directory(directory, header, FIRST_DIRECTORY_OFFSET, heapfile);
 }
 
+void _locate_first_directory_page(Heapfile *heapfile, Page *directory, Page *page) {
+
+}
+
 PageID alloc_page(Heapfile *heapfile) {
     // Initialize a fixed length page
     Page* page = new Page();
@@ -872,25 +876,54 @@ Page* DirectoryIterator::next() {
     return this->directory;
 }
 
+/**
+ * PageRecordIterator constructor
+ */
+ PageRecordIterator::PageRecordIterator(Page *page) {
+    this->page = page;
+    this->slot = 0;
+    this->capacity = fixed_len_page_capacity(page);
+    this->current_record = new Record();
+ }
+
+ bool PageRecordIterator::hasNext() {
+    if (this->slot >= this->capacity)
+        return false;
+    return read_fixed_len_page(this->page, this->slot, this->current_record);
+ }
+
+ Record* PageRecordIterator::next () {
+    assert(this->hasNext());
+    this->slot++;
+    return this->current_record;
+ }
+ Record* PageRecordIterator::get_current() {
+    return this->current_record;
+ }
  /**
   * PageIterator constructor
   */
 PageIterator::PageIterator(Heapfile* heapfile, Page* directory) {
     this->heapfile = heapfile;
     this->directory = directory;
+    PageRecordIterator *itr = new PageRecordIterator(directory);
+    this->iterator = itr;
+    this->iterator->next();
     this->current_page = new Page();
-    
+    init_fixed_len_page(this->current_page, this->heapfile->page_size, _calc_directory_page_slot_size());    
 }
 
 PageIterator::~PageIterator() {
-
+    _free_page(this->current_page);
 }
 bool PageIterator::hasNext() {
-
-    return false;
+    return this->iterator->hasNext();
 }
 Page* PageIterator::next() {
-    return new Page();
+    assert(this->hasNext());
+    this->next_offset = _read_directory_record(this->iterator->get_current(), 0);
+    _read_page_from_file(this->current_page, next_offset, this->heapfile->file_ptr);
+    return this->current_page;
 }
 
 
@@ -898,12 +931,19 @@ Page* PageIterator::next() {
 /**
  * RecordIterator constructor
  */
- RecordIterator::RecordIterator(Heapfile *heapf) {
-    heapfile = heapf;
- }
- RecordIterator::~RecordIterator() {
-
- }
+RecordIterator::RecordIterator(Heapfile *heapfile) {
+    this->heapfile = heapfile;
+    DirectoryIterator *itr = new DirectoryIterator(heapfile);
+    this->directoryIterator = itr;
+    this->pageIterator = NULL;
+    this->pageRecordIterator = NULL;
+}
+RecordIterator::~RecordIterator() {
+    if(this->pageIterator)
+        delete this->pageIterator;
+    if(this->pageRecordIterator)
+        delete this->pageRecordIterator;
+}
 /**
  * Get the next non-empty record in the heap
  */
@@ -915,5 +955,27 @@ Record RecordIterator::next() {
  * Check if the heap has anymore non-empty record
  */
 bool RecordIterator::hasNext() {
-    return false;
+CHECK_PAGE:
+    if(this->pageRecordIterator) {
+        if(this->pageRecordIterator->hasNext())
+            return true;
+        delete this->pageRecordIterator;
+        this->pageRecordIterator = NULL;
+    }
+CHECK_DIRECTORY:
+    if(this->pageIterator) {
+        if(this->pageIterator->hasNext()) {
+            Page *page = this->pageIterator->next();
+            this->pageRecordIterator = new PageRecordIterator(page);
+            goto CHECK_PAGE;
+        }
+        delete this->pageIterator;
+        this->pageIterator = NULL;
+    }
+if(this->directoryIterator->hasNext()) {
+    Page *directory = this->directoryIterator->next();
+    this->pageIterator = new PageIterator(this->heapfile, directory);
+    goto CHECK_DIRECTORY;
+}
+return false;
 }

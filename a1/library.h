@@ -130,56 +130,77 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid);
  * The directory iterator for a heapfile of multiple directories
  */
 class DirectoryIterator {
-	public:
-		DirectoryIterator(Heapfile* heapfile);
-		~DirectoryIterator();
-		bool hasNext();
+public:
+	DirectoryIterator(Heapfile* heapfile);
+	~DirectoryIterator();
+	bool hasNext();
 
-		// Return the next directory page
-		Page* next();
-	private:
-		Heapfile* heapfile;
-		Page* directory;
-		Offset current_offset;
-		Record *header;
-		Offset next_offset;
+	// Return the next directory page
+	Page* next();
+private:
+	Heapfile* heapfile;
+	Page* directory;
+	Record *header;
+	Offset current_offset;
+	Offset next_offset;
+};
+
+/**
+ * Page Record Iterator
+ */
+class PageRecordIterator {
+public:
+	PageRecordIterator(Page *page);
+	bool hasNext();
+	Record* next();
+	Record* get_current();
+private:
+	Record* current_record;
+	Page *page;
+	int slot;
+	int capacity;
 };
 
 /* Page iterator class for a directory 
  * Used to iterate through all pages in a directory
  */
 class PageIterator {
-	public:
-		PageIterator(Heapfile* heapfile, Page* directory);
-		~PageIterator();
-		bool hasNext();
-		
-		// Return the next data page
-		Page* next();
+public:
+	PageIterator(Heapfile* heapfile, Page* directory);
+	~PageIterator();
+	bool hasNext();
+	
+	// Return the next data page
+	Page* next();
 
-	private:
-		Heapfile* heapfile;
-		Page* directory;
-		Page* current_page;
+private:
+	Heapfile* heapfile;
+	Page* directory;
+	Page* current_page;
+	PageRecordIterator *iterator;
+	Offset next_offset;
 };
 
 /* Record iterator class for iterating through 
  * all records in the heap file
  */
 class RecordIterator {
-	public:
-	    RecordIterator(Heapfile *heapfile);
-	    ~RecordIterator();
+public:
+    RecordIterator(Heapfile *heapfile);
+    ~RecordIterator();
 
-	    // Get the next non-empty record in the heap
-	    Record next();
-	    
-	    // Check if the heap has anymore non-empty record
-	    bool hasNext();
+    // Get the next non-empty record in the heap
+    Record next();
+    
+    // Check if the heap has anymore non-empty record
+    bool hasNext();
 
-	private:
-		// The heap file we are iterating
-		Heapfile* heapfile;
+private:
+	// The heap file we are iterating
+	Heapfile* heapfile;
+	DirectoryIterator *directoryIterator;
+	PageIterator *pageIterator;
+	PageRecordIterator *pageRecordIterator;
 };
 
 #endif
