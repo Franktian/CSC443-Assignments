@@ -53,8 +53,7 @@ void fixed_len_write(Record *record, void *buf, int attrLen = SCHEMA_ATTRIBUTE_L
     int numAttr = record->size();
     for (int i=0; i<numAttr; i++) {
         // Iterate over the all the attributes and copy them into the buf
-        memcpy (position, record->back(), attrLen);
-    	record->pop_back();
+	memcpy (position, record->at(i), SCHEMA_ATTRIBUTE_LEN);
     	if (LIB_DEBUG) {
     	    char buffer[attrLen*numAttr];
     	    strncpy (buffer, record->at(i), attrLen);
