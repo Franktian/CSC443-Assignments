@@ -93,9 +93,9 @@ int main( int argc, const char* argv[] )
             for (int i = 0; i < record.size(); i++) {
                 // Append the new line character to the last attribute.
                 if (i == record.size() - 1) {
-                    fprintf(csvFile, "%s,\n", record.at(i));
+                    fprintf(csvFile, "%s\n", record.at(i));
                 } else {
-                    fprintf(csvFile, "%s", record.at(i));
+                    fprintf(csvFile, "%s,", record.at(i));
                 }
             }
             numRecords++;
