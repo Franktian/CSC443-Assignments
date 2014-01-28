@@ -29,4 +29,4 @@ query: query.cc library.o
 
 clean:
 	rm -rf *.o
-	rm -rf write_fixed_len_pages read_fixed_len_pages
+	rm -rf write_fixed_len_pages read_fixed_len_pages heapfile2csv csv2heapfile query

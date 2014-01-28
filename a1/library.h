@@ -6,6 +6,7 @@
 
 #define SCHEMA_ATTRIBUTE_LEN 10
 #define SCHEMA_ATTRIBUTES_NUM 100
+#define RECORD_SIZE 1000
 
 typedef const char* V;
 typedef std::vector<V> Record;
