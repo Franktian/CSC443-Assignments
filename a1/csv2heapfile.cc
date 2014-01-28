@@ -68,32 +68,27 @@ int main( int argc, const char* argv[] )
             char content[10] = "         ";
             record.push_back(content);
         }   
-	
+
         // Process the record in the csv file.
-	int slot = 0;
+	    int slot = 0;
         while(getline(lineStream,dataField,',')) {
             char* attribute = new char[strlen(dataField.c_str())];
             strncpy(attribute, dataField.c_str(), strlen(dataField.c_str()));
- 	    record.at(slot++) = attribute;
+ 	        record.at(slot++) = attribute;
             //record.push_back(attribute);
         }
 
         // Write the record to the page
-        write_fixed_len_page(page, index++, &record);
+        write_fixed_len_page(page, index++, &record, SCHEMA_ATTRIBUTE_LEN);
         numRecs++;
 
         // Page is full, allocate a new page and write the current one back to heapfile
         if (index == page->capacity) {
-	    
+            
             PageID id = alloc_page(hFile);
-            if (id != -1) {
-                write_page(page, hFile, id);
-            } 
-	    else {
-                cout << "ERROR: invalid page ID! Something wrong with alloc_page() function!" << endl;
-		exit(1);
-            }
-
+            cout << "allocated page ID: " << id << endl;
+            write_page(page, hFile, id);
+            
             // Initialize new page
             delete page;
             page = new Page();
@@ -105,15 +100,8 @@ int main( int argc, const char* argv[] )
   
     // Remaining page now written yet, write the last page to file
     if(index != 0) {
-
         PageID id = alloc_page(hFile);
-        if (id != -1) {
-            write_page(page, hFile, id);
-        } 
-        else {
-            cout << "ERROR: invalid page ID! Something wrong with alloc_page() function!" << endl;
-	    exit(1);
-        }
+        write_page(page, hFile, id);
         numPages++;
     }
 

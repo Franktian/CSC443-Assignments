@@ -11,7 +11,7 @@
 typedef const char* V;
 typedef std::vector<V> Record;
 // The byte offset position in a file
-typedef int Offset;
+typedef unsigned int Offset;
 
 /**
  * Compute the number of bytes required to serialize record
@@ -21,14 +21,14 @@ int fixed_len_sizeof(Record *record);
 /**
  * Serialize the record to a byte array to be stored in buf.
  */
-void fixed_len_write(Record *record, void *buf);
+void fixed_len_write(Record *record, void *buf, int attrLen);
 
 
 /**
  * Deserializes from `size` bytes from the buffer, `buf`, and
  * stores the record in `record`.
  */
-void fixed_len_read(void *buf, int size, Record *record);
+void fixed_len_read(void *buf, int size, Record *record, int attrLen, int numAttr);
 
 
 /**
@@ -62,18 +62,17 @@ int fixed_len_page_freeslots(Page *page);
  *   record slot offset if successful,
  *   -1 if unsuccessful (page full)
  */
-int add_fixed_len_page(Page *page, Record *r);
+int add_fixed_len_page(Page *page, Record *r, int attrLen);
 
 /**
  * Write a record into a given slot.
  */
-void write_fixed_len_page(Page *page, int slot, Record *r);
+void write_fixed_len_page(Page *page, int slot, Record *r, int attrLen);
 
 /**
  * Read a record from the page from a given slot.
  */
-bool read_fixed_len_page(Page *page, int slot, Record *r);
-
+bool read_fixed_len_page(Page *page, int slot, Record *r, int attrLen, int numAttr);
 
 /**
  * Heap file
@@ -82,6 +81,9 @@ typedef struct {
     FILE *file_ptr;
     int page_size;
 } Heapfile;
+
+#define DIRECTORY_RECORD_ATTRIBUTE_LEN sizeof(Offset)
+#define DIRECTORY_RECORD_ATTRIBUTE_NUM 3
 
 /*
  * PageID, unique for a page within a heapfile
@@ -105,6 +107,33 @@ typedef struct {
 
 // The first directory's byte offset, should be 0
 #define FIRST_DIRECTORY_OFFSET 0
+
+// The page offset for empty directory record
+#define EMPTY_PAGE_OFFSET 0
+
+/* 
+ * A drectory header record has 3 attributes:
+ * byte offset of this directory
+ * byte offset of the next directory
+ * A signature number used for validation after parsing
+ */
+typedef struct {
+	Offset offset;
+	Offset next;
+	Offset signature;
+} DirectoryHeader;
+
+/* 
+ * A drectory record has 3 attributes:
+ * byte offset of the page pointed by this record
+ * number of free slots in the page
+ * A signature number used for validation after parsing
+ */
+typedef struct {
+	Offset page_offset;
+	Offset free_slots;
+	Offset signature;
+} DirectoryRecord;
 
 /**
  * Initalize a heapfile to use the file and page size given.
@@ -137,13 +166,11 @@ public:
 	bool hasNext();
 
 	// Return the next directory page
-	Page* next();
+	char* next();
 private:
 	Heapfile* heapfile;
-	Page* directory;
-	Record *header;		// Points to the header record of the current directory
-	Offset current_offset;  // Offset of the current directory in the heapfile
-	Offset next_offset;
+	char* directory;
+	DirectoryHeader *header;		// Points to the header record of the current directory
 };
 
 /**
@@ -153,34 +180,38 @@ private:
 class PageRecordIterator {
 public:
 	PageRecordIterator(Page *page);
+	~PageRecordIterator();
 	bool hasNext();
 	Record* next();
-	Record* get_current();  // Get the current record in the iterator
 private:
 	Record* current_record;
+	Record* next_record;
 	Page *page;
-	int slot;  // Indicate the current slot number
+	int curr_slot;  // Indicate the current slot number
+	int next_slot;
 	int capacity;  // Indicate the capacity of the page
+	bool validNext;
 };
 
 /* Page iterator class for a directory 
  * Used to iterate through all pages in a directory
  */
-class PageIterator {
+class DirectoryRecordIterator {
 public:
-	PageIterator(Heapfile* heapfile, Page* directory);
-	~PageIterator();
+	DirectoryRecordIterator(Heapfile* heapfile, char* directory);
+	~DirectoryRecordIterator();
 	bool hasNext();
 	
 	// Return the next data page
-	Page* next();
+	DirectoryRecord* next();
 
 private:
 	Heapfile* heapfile;
-	Page* directory;
-	Page* current_page;
-	PageRecordIterator *iterator;	// iterates through the records of directory page
-	Offset next_offset;		// use to read the data page from the heapfile
+	char* directory;
+	DirectoryRecord* directory_record;
+	int curr_slot;
+	int directory_capacity;
+	bool validNext;
 };
 
 /* Record iterator class for iterating through 
@@ -200,9 +231,16 @@ public:
 private:
 	// The heap file we are iterating
 	Heapfile* heapfile;
-	DirectoryIterator *directoryIterator;
-	PageIterator *pageIterator;
-	PageRecordIterator *pageRecordIterator;
+	
+	DirectoryIterator *directory_itr;
+	DirectoryRecordIterator *directory_record_itr;
+	PageRecordIterator *page_itr;
+	
+	bool validNext;
+	DirectoryHeader* curr_dir_header;
+	DirectoryRecord* curr_dir_record;
+	char* curr_dir;
+	Page* curr_page;
 };
 
 #endif

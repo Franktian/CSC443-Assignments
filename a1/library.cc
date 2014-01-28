@@ -33,7 +33,7 @@ int fixed_len_sizeof(Record *record) {
 /**
  * Serialize the record to a byte array to be stored in buf.
  */
-void fixed_len_write(Record *record, void *buf) {
+void fixed_len_write(Record *record, void *buf, int attrLen = SCHEMA_ATTRIBUTE_LEN) {
 
     // Record pointer or Buffer pointer is NULL - Do Nothing.
     if (!record || !buf) {
@@ -46,14 +46,14 @@ void fixed_len_write(Record *record, void *buf) {
     int numAttr = record->size();
     for (int i=0; i<numAttr; i++) {
         // Iterate over the all the attributes and copy them into the buf
-        memcpy (position, record->back(), SCHEMA_ATTRIBUTE_LEN);
+        memcpy (position, record->back(), attrLen);
     	record->pop_back();
     	if (LIB_DEBUG) {
-    	    char buffer[1000];
-    	    strncpy (buffer, record->at(i), SCHEMA_ATTRIBUTE_LEN);
+    	    char buffer[attrLen*numAttr];
+    	    strncpy (buffer, record->at(i), attrLen);
     	    cout << "###### Serializing Attribute: " << record->at(i) << " ######" << endl;
         }
-        position += SCHEMA_ATTRIBUTE_LEN;
+        position += attrLen;
     }
     if (LIB_DEBUG) 
     	cout << (char*) buf << endl;
@@ -66,7 +66,8 @@ void fixed_len_write(Record *record, void *buf) {
  * Deserializes from `size` bytes from the buffer, `buf`, and
  * stores the record in `record`.
  */
-void fixed_len_read(void *buf, int size, Record *record) {
+void fixed_len_read(void *buf, int size, Record *record, 
+    int attrLen = SCHEMA_ATTRIBUTE_LEN, int numAttr = SCHEMA_ATTRIBUTES_NUM) {
     
     if (!buf || !record) {
         cout << "ERROR fixed_len_read(): Invalid input parameter!" << endl;
@@ -75,10 +76,10 @@ void fixed_len_read(void *buf, int size, Record *record) {
     
     // Copy the value into the record
     assert(size == fixed_len_sizeof(record));
-    for (int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++) {
+    for (int i = 0; i < numAttr; i++) {
         // SCHEMA_ATTRIBUTE_LEN is fix = 10 bytes
-        char *buffer = new char[10];
-        strncpy(buffer, (char*)buf + SCHEMA_ATTRIBUTE_LEN * i, SCHEMA_ATTRIBUTE_LEN);
+        char *buffer = new char[attrLen];
+        strncpy(buffer, (char*)buf + attrLen * i, attrLen);
         if (LIB_DEBUG)
 	    cout << "Content : " << buffer << endl;
         
@@ -368,7 +369,7 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
 */
 
 // Version 2
-void write_fixed_len_page(Page *page, int slot, Record *r) {
+void write_fixed_len_page(Page *page, int slot, Record *r, int attrLen = SCHEMA_ATTRIBUTE_LEN) {
     // Check if Record is NULL or the page has not been initialized
     if (!page || !page->data || !r) {
         cout << "ERROR write_fixed_len_page(): NULL pointers passed in!" << endl;
@@ -385,8 +386,8 @@ void write_fixed_len_page(Page *page, int slot, Record *r) {
     // Find the location to write
     char *data = (char*)page->data + page->capacity + page->slot_size*slot;
     // Write the record into the given slot
-    cout << "WRITE_PAGE() ****** " << r->at(0) << " &&&&&& " << r->at(1) << " ******" << endl; 
-    fixed_len_write(r, (void*) data);   
+    // cout << "WRITE_PAGE() ****** " << r->at(0) << " &&&&&& " << r->at(1) << " ******" << endl; 
+    fixed_len_write(r, (void*) data, attrLen);
     // Update the slot directory indicator byte
     ((char*)page->data)[slot] = 1;
     
@@ -424,7 +425,7 @@ int add_fixed_len_page(Page *page, Record *r) {
 */
 
 // Version 2
-int add_fixed_len_page(Page *page, Record *r) {
+int add_fixed_len_page(Page *page, Record *r, int attrLen = SCHEMA_ATTRIBUTE_LEN) {
     
    if (!page || !page->data || !r) {
        cout << "ERROR add_fixed_len_page(): Invalid inputs - NULL Pointers!" << endl;
@@ -440,8 +441,8 @@ int add_fixed_len_page(Page *page, Record *r) {
    }
 
    // Find slot position and copy the data.
-   cout << "(ADD_PAGE)****** " << r->at(0) << " &&&&&& " << r->at(60) << " ******" << endl;
-   write_fixed_len_page(page, slot, r);
+   // cout << "(ADD_PAGE)****** " << r->at(0) << " &&&&&& " << r->at(1) << " ******" << endl;
+   write_fixed_len_page(page, slot, r, attrLen);
    return slot; 
 }
 
@@ -475,7 +476,8 @@ void read_fixed_len_page(Page *page, int slot, Record *r) {
 */
 
 // Version 2
-bool read_fixed_len_page(Page *page, int slot, Record *r) {
+bool read_fixed_len_page(Page *page, int slot, Record *r, int attrLen = SCHEMA_ATTRIBUTE_LEN,
+                            int numAttr = SCHEMA_ATTRIBUTES_NUM) {
     
     // Check if Record is NULL or the page has not been initialized
     if (!page || !page->data || !r) {
@@ -484,23 +486,22 @@ bool read_fixed_len_page(Page *page, int slot, Record *r) {
     }
     
     int numSlots = page->capacity;
-    cout << page->capacity << endl;
+    // cout << page->capacity << endl;
     if (LIB_DEBUG) 
         cout << "NUM OF SLOTS: " << numSlots << " " << page->slot_size << endl;
+    
     // Slot input is invalid
-    if (slot+1 > numSlots || slot < 0) {
-        cout << "ERROR read_fixed_len_page(): Invalid slot number!" << endl;
-        exit(1);
-    }
+    assert(slot < numSlots && slot > 0);
+    
     // Slot is empty
     if (((char*)page->data)[slot] != 1) {
-    	cout << "ERROR read_fixed_len_page(): slot position is empty!" << endl;
+    	// cout << "ERROR read_fixed_len_page(): slot position is empty!" << endl;
     	return false;
     }
 
     // Find the location to read
     char *data = (char*)page->data + page->capacity + page->slot_size*slot;
-    fixed_len_read((void*)data, fixed_len_sizeof(r), r);
+    fixed_len_read((void*)data, fixed_len_sizeof(r), r, attrLen, numAttr);
 
     return true;
 }
@@ -511,18 +512,18 @@ bool read_fixed_len_page(Page *page, int slot, Record *r) {
  * Write a page to a file, at the position given by offset 
  * set start_begin to false to start the offset at the end of the file
  */
-void _write_page_to_file(Page* page, Offset offset, FILE* file, bool start_begin = true) {
-    fseek(file, offset, start_begin ? SEEK_SET : SEEK_END);
-    fwrite(page->data, page->page_size, 1, file);
-    fflush(file);
+void _write_page_to_file(Page* page, Offset offset, Heapfile* heapfile, bool start_begin = true) {
+    fseek(heapfile->file_ptr, offset, start_begin ? SEEK_SET : SEEK_END);
+    fwrite(page->data, page->page_size, 1, heapfile->file_ptr);
+    fflush(heapfile->file_ptr);
 }
 
 /** 
  * Read a page from a file, at the position given by offset
  */
-void _read_page_from_file(Page* page, Offset offset, FILE* file) {
-    fseek(file, offset, SEEK_SET);
-    fread(page->data, page->page_size, 1, file);
+void _read_page_from_file(Page* page, Offset offset, Heapfile* heapfile) {
+    fseek(heapfile->file_ptr, offset, SEEK_SET);
+    fread(page->data, page->page_size, 1, heapfile->file_ptr);
 }
 
 /**
@@ -542,78 +543,89 @@ void _free_page(Page* page) {
 }
 
 // Return the size of the serialized directory page record in bytes
-inline int _calc_directory_page_slot_size() {
-    return sizeof(Offset) * 3;
+inline int _directory_record_size() {
+    return DIRECTORY_RECORD_ATTRIBUTE_LEN*DIRECTORY_RECORD_ATTRIBUTE_NUM;
 }
 
-inline int _calc_directory_page_capacity(int page_size) {
-    return page_size / _calc_directory_page_slot_size();
+inline int _directory_page_capacity(int page_size) {
+    return page_size / _directory_record_size();
 }
 
-/**
- * Initialize a fixed length record with 3 attributes
- */
-void _init_fixed_len_record_int_attr(Record* record, Offset attr1, Offset attr2, Offset attr3) {
-    char* bytes_buf = new char[sizeof(Offset)];
-    memcpy(bytes_buf, &attr1, sizeof(Offset));
-    record->push_back(bytes_buf);
-    memcpy(bytes_buf, &attr2, sizeof(Offset));
-    record->push_back(bytes_buf);
-    memcpy(bytes_buf, &attr3, sizeof(Offset));
-    record->push_back(bytes_buf);
-    delete[] bytes_buf;
+void _read_directory_header_from_file(DirectoryHeader* header, Offset offset, Heapfile* heapfile) {
+    fseek(heapfile->file_ptr, offset, SEEK_SET);
+    fread(&(header->offset), sizeof(Offset), 1, heapfile->file_ptr);
+    fread(&(header->next), sizeof(Offset), 1, heapfile->file_ptr);
+    fread(&(header->signature), sizeof(Offset), 1, heapfile->file_ptr);
 }
 
-/**
- * Initialize a directory header record (just another Record type)
- * A drectory header record has 3 attributes:
- * 0: byte offset of this directory
- * 1: byte offset of the next directory
- * 2: A signature number used for validation after parsing
- */
-void _init_directory_header(Record* record, Offset offset) {
-    assert(offset >= 0);
-    // When initialized, the header has next directory pointer
-    // pointing to the first directory
-    _init_fixed_len_record_int_attr(record, offset, FIRST_DIRECTORY_OFFSET, DIRECTORY_RECORD_SIGNATURE);
+void _write_directory_header_to_file(DirectoryHeader* header, Offset offset, Heapfile* heapfile) {
+    fseek(heapfile->file_ptr, offset, SEEK_SET);
+    fwrite(&(header->offset), sizeof(Offset), 1, heapfile->file_ptr);
+    fwrite(&(header->next), sizeof(Offset), 1, heapfile->file_ptr);
+    fwrite(&(header->signature), sizeof(Offset), 1, heapfile->file_ptr);
+    fflush(heapfile->file_ptr);
 }
 
-/**
- * Initialize a directory record
- * A drectory record has 3 attributes:
- * 0: byte offset of the page pointed by this record
- * 1: number of free slots in the page
- * 2: A signature number used for validation after parsing
- */
-void _init_directory_record(Record* record, Offset page_offset, int free_slots) {
-    assert(page_offset >= 0 && free_slots >= 0);
-    _init_fixed_len_record_int_attr(record, page_offset, free_slots, DIRECTORY_RECORD_SIGNATURE);
+void _read_directory_from_file(char* directory, Offset offset, Heapfile* heapfile) {
+    fseek(heapfile->file_ptr, offset, SEEK_SET);
+    fread(directory, heapfile->page_size, 1, heapfile->file_ptr);
 }
 
-/* Read a value from the directory record, given index of the value */
-Offset _read_directory_record(Record* record, int index) {
-    assert(index <= 3 && index >= 0);
-    Offset value;
-    memcpy(&value, (char*) record->at(0), sizeof(Offset));
-    return value;
+void _write_directory_to_file(char* directory, Offset offset, Heapfile* heapfile) {
+    // Write the directory to file
+    fseek(heapfile->file_ptr, offset, SEEK_SET);
+    fwrite(directory, heapfile->page_size, 1, heapfile->file_ptr);
+    fflush(heapfile->file_ptr);
 }
 
-/* Set the directory record with some value */
-void _write_directory_record(Record* record, int index, Offset value) {
-    assert(index <= 3 && index >= 0);
-    memcpy((char*)record->at(0), &value, sizeof(Offset));
+void _read_directory_record(DirectoryRecord* record, char* directory, int slot) {
+    char* i = directory + slot*_directory_record_size();
+    memcpy(&(record->page_offset), i, sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(&(record->free_slots), i, sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(&(record->signature), i, sizeof(Offset));
 }
 
-/**
- * Initialize a directory page and create the header record
- * A directory page is used for pointing to data pages
- * The page has to be initialized with init_fixed_len_page before
- */
-void _init_directory_page(Page* page, Offset offset) {
-    Record* header = new Record();
-    _init_directory_header(header, offset);
-    int ret = add_fixed_len_page(page, header);
-    assert(ret != -1);
+void _write_directory_record(DirectoryRecord* record, char* directory, int slot) {
+    char* i = directory + slot*_directory_record_size();
+    memcpy(i, &(record->page_offset), sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(i, &(record->free_slots), sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(i, &(record->signature), sizeof(Offset));
+}
+
+void _init_directory_record(DirectoryRecord* record, Offset page_offset, Offset free_slots) {
+    record->page_offset = page_offset;
+    record->free_slots = free_slots;
+    record->signature = DIRECTORY_RECORD_SIGNATURE;
+}
+
+void _init_directory_header(DirectoryHeader* header, Offset offset, Offset next) {
+    header->offset = offset;
+    header->next = next;
+    header->signature = DIRECTORY_RECORD_SIGNATURE;
+}
+
+void _init_directory(char* directory, int size, DirectoryHeader* header) {
+    // initialized header passed in
+    int capacity = _directory_page_capacity(size);
+    assert(size > 1);
+    // Serialize header first
+    char* i = directory;
+    memcpy(i, &(header->offset), sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(i, &(header->next), sizeof(Offset));
+    i += sizeof(Offset);
+    memcpy(i, &(header->signature), sizeof(Offset));
+
+    DirectoryRecord* record = new DirectoryRecord();
+    _init_directory_record(record, EMPTY_PAGE_OFFSET, 0);
+    for (int i = 1; i < capacity; ++i) // 1 is the header, ignore
+    {
+        _write_directory_record(record, directory, i);
+    }
 }
 
 /**
@@ -621,15 +633,14 @@ void _init_directory_page(Page* page, Offset offset) {
  * The directory page must be initialized before passed in
  * Return the directory offset of the located directory
  */
-Offset _locate_directory(Page* directory_page, Record* header, Offset page_offset, Heapfile* heapfile) {
+Offset _locate_directory(DirectoryHeader* header, Offset page_offset, Heapfile* heapfile) {
     Offset directory_offset = FIRST_DIRECTORY_OFFSET;
     Offset curr_directory_offset;
     do {
-        _read_page_from_file(directory_page, directory_offset, heapfile->file_ptr);
-        read_fixed_len_page(directory_page, 0, header);
+        _read_directory_header_from_file(header, directory_offset, heapfile);
         curr_directory_offset = directory_offset;
         // Get the offset of the next directory
-        directory_offset = _read_directory_record(header, 1);
+        directory_offset = header->next;
         // If the offset of the next directory is greater than the page offset
         // we have found the directory of the page
         if (directory_offset > page_offset) {
@@ -642,60 +653,57 @@ Offset _locate_directory(Page* directory_page, Record* header, Offset page_offse
     return curr_directory_offset;
 }
 
+int _locate_available_slot(DirectoryRecord* record, char* directory, int size) {
+    int capacity = _directory_page_capacity(size);
+    for (int i = 1; i < capacity; ++i) // 1 is the header
+    {
+        _read_directory_record(record, directory, i);
+        if (record->page_offset == EMPTY_PAGE_OFFSET) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int _locate_directory_record(DirectoryRecord* record, Offset pid, char* directory, int size) {
+    int capacity = _directory_page_capacity(size);
+    for (int i = 1; i < capacity; ++i) // 1 is the header
+    {
+        _read_directory_record(record, directory, i);
+        if (record->page_offset == pid) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 /**
  * Read the last directory page and its header of the heapfile
- * The directory page must be initialized before passed in.
+ * The directory header must be initialized before passed in.
  * Return the slot number of the page record in the directory
  */
-void _read_last_directory(Page* directory_page, Record* header, Heapfile* heapfile) {
+Offset _last_directory(DirectoryHeader* header, Heapfile* heapfile) {
     Offset eof = _get_eof_offset(heapfile->file_ptr);
-    _locate_directory(directory_page, header, eof, heapfile);
+    return _locate_directory(header, eof, heapfile);
 }
 
-/* Locate and read the page record in a directory given the page ID */
-int _read_page_record(Page* directory_page, Record* page_record, PageID pid, Heapfile* heapfile) {
-    // The directory page must be initialized before passed in
+Offset _locate_page(PageID pid, Heapfile* heapfile) {
+    DirectoryHeader* header = new DirectoryHeader();
+    DirectoryRecord* record = new DirectoryRecord();
+    char* directory = new char[heapfile->page_size];
 
-    // Loop through the directory to find our page record
-    int directory_capacity = fixed_len_page_capacity(directory_page);
-    int curr_slot = 1; // 0 is the header, just ignore
-    Offset curr_page_offset;
-    do {
+    // locate the directory for the page record
+    Offset directory_offset = _locate_directory(header, pid, heapfile);
 
-        read_fixed_len_page(directory_page, curr_slot, page_record);
-        curr_page_offset = _read_directory_record(page_record, 0);
-        if (curr_page_offset == pid) {
-            break;
-        }
-        curr_slot++;
-    } while (curr_slot < directory_capacity);
-    
-    // Return the slot number of the page record
-    return curr_slot;
-}
+    // read the directory from file
+    _read_directory_from_file(directory, directory_offset, heapfile);
 
-/* Get the offset of a page given its page ID */
-Offset _locate_page(PageID pid, Heapfile *heapfile) {
-    Record* page_record = new Record();
-    Record* header = new Record();
-    Page* directory_page = new Page();
+    // locate the directory record of this pid
+    _locate_directory_record(record, pid, directory, heapfile->page_size);
 
-    // First we need to find the directory that contains the page with pid
-    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
-    _locate_directory(directory_page, header, pid, heapfile);
+    delete[] directory;
 
-    // Get the page record from directory
-    _read_page_record(directory_page, page_record, pid, heapfile);
-
-    // Get the offset from the page record in the directory
-    Offset page_offset = _read_directory_record(page_record, 0);
-
-    // Just to make sure our current model is working
-    assert(page_offset == pid);
-
-    _free_page(directory_page);
-
-    return page_offset;
+    return record->page_offset;
 }
 
 void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
@@ -703,97 +711,92 @@ void init_heapfile(Heapfile *heapfile, int page_size, FILE *file) {
     heapfile->page_size = page_size;
 
     // Get stuff we need to use
-    Page* directory_page = new Page();
-    Record* header = new Record();
+    DirectoryHeader* header = new DirectoryHeader();
 
     // Check if this is a new heapfile by checking if it has a directory
     // page at the beginning of the file with a valid directory header,
     // which contains the signature number. 
-    init_fixed_len_page(directory_page, page_size, _calc_directory_page_slot_size());
-    _read_page_from_file(directory_page, FIRST_DIRECTORY_OFFSET, file);
+    _read_directory_header_from_file(header, FIRST_DIRECTORY_OFFSET, heapfile);
     
     // Read the header record at the first slot of the page
-    read_fixed_len_page(directory_page, 0, header);
-
     // If the header was not correctly parsed, then it is a new heapfile
-    if (! _read_directory_record(header, 0) == FIRST_DIRECTORY_OFFSET || 
-        ! _read_directory_record(header, 2) == DIRECTORY_RECORD_SIGNATURE) {
-        // Create the first directory page
-        _init_directory_page(directory_page, FIRST_DIRECTORY_OFFSET);
-
-        // Write the page to the file
-        _write_page_to_file(directory_page, FIRST_DIRECTORY_OFFSET, file);
+    if (header->signature != DIRECTORY_RECORD_SIGNATURE) {
+        _init_directory_header(header, FIRST_DIRECTORY_OFFSET, FIRST_DIRECTORY_OFFSET);
+        char* directory = new char[heapfile->page_size];
+        _init_directory(directory, heapfile->page_size, header);
+        _write_directory_to_file(directory, FIRST_DIRECTORY_OFFSET, heapfile);
+        delete[] directory;
     }
 
-    // Free the directory page being used for checking
-    _free_page(directory_page);
+    delete header;
 }
 
 // Parse the first directory from a heapfile
-void _locate_first_directory(Heapfile *heapfile, Page *directory, Record *header) {
-    _locate_directory(directory, header, FIRST_DIRECTORY_OFFSET, heapfile);
-}
-
-void _locate_first_directory_page(Heapfile *heapfile, Page *directory, Page *page) {
-
+void _locate_first_directory(DirectoryHeader* header, Heapfile *heapfile) {
+    _locate_directory(header, FIRST_DIRECTORY_OFFSET, heapfile);
 }
 
 PageID alloc_page(Heapfile *heapfile) {
     // Initialize a fixed length page
     Page* page = new Page();
-    init_fixed_len_page(page, heapfile->page_size, 1000); // TO-DO: extract this
+    init_fixed_len_page(page, heapfile->page_size, RECORD_SIZE); // TO-DO: extract this
 
-    // Find the last directory page in the heapfile
-    Page* directory_page = new Page();
-    Record* header = new Record();
-    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
-    _read_last_directory(directory_page, header, heapfile);
-    Offset directory_offset = _read_directory_record(header, 0);
+    // Find the last directory in the heapfile
+    DirectoryHeader* header = new DirectoryHeader();
+    Offset directory_offset = _last_directory(header, heapfile);
+    char* directory = new char[heapfile->page_size];
+    _read_directory_from_file(directory, directory_offset, heapfile);
 
     // We don't need to check if this directory is full here,
     // because we will create a new directory whenever the one we
     // are using is full
 
-    // Create a page record to store in this directory
-    Record* page_record = new Record();
+    // Find the next available slot for a page record in directory
+    DirectoryRecord* record = new DirectoryRecord();
+    int slot = _locate_available_slot(record, directory, heapfile->page_size);
+    assert(slot != -1);
+
+    // Create a page record to store in this directory    
     // A new page is always added to the end of the heapfile.
     int page_offset = _get_eof_offset(heapfile->file_ptr);
-    _init_directory_record(page_record, page_offset, page->capacity);
+    _init_directory_record(record, page_offset, page->capacity);
 
     // Write the page to heapfile
-    _write_page_to_file(page, page_offset, heapfile->file_ptr);
+    _write_page_to_file(page, page_offset, heapfile);
 
-    // Add the page record to the directory page
-    int ret = add_fixed_len_page(directory_page, page_record);
-    assert(ret != -1);
-
-    // Check if the current directory is full
-    int num_free_slots = fixed_len_page_freeslots(directory_page);
-    if (num_free_slots == 0) {
-        // If full, we need to create a new directory
-        Page* new_directory_page = new Page();
-        // Create a fixed length page first
-        init_fixed_len_page(new_directory_page, heapfile->page_size, _calc_directory_page_slot_size());
-        // Initialize this page as a directory page (adding header)
-        int new_directory_offset = _get_eof_offset(heapfile->file_ptr);
-        _init_directory_page(new_directory_page, new_directory_offset);
-        // Write the new directory page to file
-        _write_page_to_file(new_directory_page, new_directory_offset, heapfile->file_ptr);
-
-        // Update the header of the previous directory
-        _write_directory_record(header, 0, new_directory_offset);
-        write_fixed_len_page(directory_page, 0, header);
-
-        // Free the new directory page used
-        _free_page(new_directory_page);
-    }
+    // Add the page record to the directory
+    _write_directory_record(record, directory, slot);
 
     // Write the directory page to file
-    _write_page_to_file(directory_page, directory_offset, heapfile->file_ptr);
+    _write_directory_to_file(directory, directory_offset, heapfile);
+
+    // Check if the current directory is full
+    if (slot == _directory_page_capacity(heapfile->page_size)) {
+        // If full, we need to create a new directory
+        char* new_directory = new char[heapfile->page_size];
+        
+        // Create the header 
+        DirectoryHeader* new_header = new DirectoryHeader();
+        int new_directory_offset = _get_eof_offset(heapfile->file_ptr);
+        _init_directory_header(new_header, new_directory_offset, FIRST_DIRECTORY_OFFSET);
+        
+        // Initialize the directory
+        _init_directory(new_directory, heapfile->page_size, new_header);
+
+        // Write the new directory to file
+        _write_directory_to_file(new_directory, new_directory_offset, heapfile);
+
+        // Update the header of the previous directory
+        header->next = new_directory_offset;
+        _write_directory_header_to_file(header, directory_offset, heapfile);
+
+        // Free the new directory page used
+        delete[] new_directory;
+    }
 
     // Free resource used
     _free_page(page);
-    _free_page(directory_page);
+    delete[] directory;
 
     // We use the new page's offset as the ID of the page
     return page_offset;
@@ -809,76 +812,80 @@ void read_page(Heapfile *heapfile, PageID pid, Page *page) {
     
     Offset page_offset = _locate_page(pid, heapfile);
 
+    assert(pid == page_offset);
+
     // Read the page at the offset position
-    _read_page_from_file(page, page_offset, heapfile->file_ptr);
+    _read_page_from_file(page, page_offset, heapfile);
 }
 
 void write_page(Page *page, Heapfile *heapfile, PageID pid) {
-    Record* page_record = new Record();
-    Record* header = new Record();
-    Page* directory_page = new Page();
+    DirectoryHeader* header = new DirectoryHeader();
+    DirectoryRecord* record = new DirectoryRecord();
+    char* directory = new char[heapfile->page_size];
 
-    // First we need to find the directory that contains the page with pid
-    init_fixed_len_page(directory_page, heapfile->page_size, _calc_directory_page_slot_size());
-    Offset directory_offset = _locate_directory(directory_page, header, pid, heapfile);
+    // locate the directory for the page record
+    Offset directory_offset = _locate_directory(header, pid, heapfile);
 
-    // Get the page record from directory
-    int page_record_slot = _read_page_record(directory_page, page_record, pid, heapfile);
+    // read the directory from file
+    _read_directory_from_file(directory, directory_offset, heapfile);
 
-    // Get the offset from the page record in the directory
-    Offset page_offset = _read_directory_record(page_record, 0);
+    // locate the directory record of this pid
+    int slot = _locate_directory_record(record, pid, directory, heapfile->page_size);
+
+    assert(slot != -1);
+
+    int page_offset = record->page_offset;
 
     // Just to make sure our current model is working
     assert(page_offset == pid);
 
     // Write the page at the offset position
-    _write_page_to_file(page, page_offset, heapfile->file_ptr);
+    _write_page_to_file(page, page_offset, heapfile);
 
     // Update the page record
-    int num_free_slots = fixed_len_page_freeslots(page);
-    _write_directory_record(page_record, 1, num_free_slots);
-    write_fixed_len_page(directory_page, page_record_slot, page_record);
+    record->free_slots = fixed_len_page_freeslots(page);
+    _write_directory_record(record, directory, slot);
 
     // Update the directory page
-    _write_page_to_file(directory_page, directory_offset, heapfile->file_ptr);
+    _write_directory_to_file(directory, directory_offset, heapfile);
 
     // Free
-    _free_page(directory_page);
+    delete[] directory;
 }
 
+/* Swap two record pointers */
+void swap(Record** r1, Record** r2) {
+    Record* temp = *r1;
+    *r1 = *r2;
+    *r2 = temp;
+}
 
 /**
  * DirectoryIterator constructor
  */
 DirectoryIterator::DirectoryIterator(Heapfile* heapfile) {
     this->heapfile = heapfile;
-    this->directory = new Page();
-    this->header = new Record();
-    // Initialize the directory page and header record
-    init_fixed_len_page(this->directory, this->heapfile->page_size, _calc_directory_page_slot_size());
-    _locate_first_directory(this->heapfile, this->directory, this->header);
-    // Set the current offset to 0
-    this->current_offset = FIRST_DIRECTORY_OFFSET;
+    this->directory = new char[heapfile->page_size];
+    this->header = new DirectoryHeader();
+    // Get the first header
+    _locate_first_directory(this->header, this->heapfile);
 }
 
 
 DirectoryIterator::~DirectoryIterator() {
-    _free_page(this->directory);
+    delete[] this->directory;
+    delete this->header;
 }
 
 bool DirectoryIterator::hasNext() {
-    // Get the next offset with the current header record
-    this->next_offset = _read_directory_record(header, 1);
-    return this->next_offset > this->current_offset;
+    return header->next != FIRST_DIRECTORY_OFFSET;
 }
 
-Page* DirectoryIterator::next() {
+char* DirectoryIterator::next() {
     // Confirm we have another directory in the heafile
     assert(this->hasNext());
-    // Set the next directory and its header
-    _read_page_from_file(this->directory, this->next_offset, this->heapfile->file_ptr);
-    // Set the next offset
-    this->current_offset = this->next_offset;
+    _read_directory_header_from_file(header, header->next, heapfile);
+    _read_directory_from_file(directory, header->offset, heapfile);
     return this->directory;
 }
 
@@ -887,115 +894,178 @@ Page* DirectoryIterator::next() {
  */
  PageRecordIterator::PageRecordIterator(Page *page) {
     this->page = page;
-    this->slot = 0;
+    this->curr_slot = 0;
+    this->next_slot = this->curr_slot + 1;
     this->capacity = fixed_len_page_capacity(page);
     // Initialize the record
     this->current_record = new Record();
+    this->next_record = new Record();
+    this->validNext = false;
+ }
+
+ PageRecordIterator::~PageRecordIterator() {
+    delete this->current_record;
+    delete this->next_record;
  }
 
  bool PageRecordIterator::hasNext() {
+    if (validNext) {
+        return true;
+    }
     // the slot number cannot be greater than the capacity
-    if (this->slot >= this->capacity)
-        return false;
+    if (this->next_slot >= this->capacity)
+        return this->validNext = false;
 
     // Get the next non-empty record in the page
-    return read_fixed_len_page(this->page, this->slot, this->current_record);
+    while (this->next_slot < this->capacity) {
+        if (read_fixed_len_page(this->page, this->next_slot, this->next_record)) {
+            this->validNext = true;
+            this->next_slot ++;
+            return true;
+        }
+        this->next_slot ++;
+    }
+    return this->validNext = false;
  }
 
- Record* PageRecordIterator::next () {
-    assert(this->hasNext());
+Record* PageRecordIterator::next() {
+    if (!this->validNext) {
+        assert(this->hasNext());
+    }
+    swap(this->current_record, this->next_record);
+    this->curr_slot = this->next_slot;
+    this->next_slot++;
+    this->validNext = false;
+    return this->current_record;
+}
 
-    // Increment the slot number, hasNext() already set the new record
-    this->slot++;
-    return this->current_record;
- }
- Record* PageRecordIterator::get_current() {
-    // This is because I need to access the record in the RecoredIterator class
-    return this->current_record;
- }
  /**
-  * PageIterator constructor
+  * DirectoryRecordIterator constructor
   * loop through each record of the directory and use attribute 0(page offset)
   * to read the page data from the heapfile
   */
-PageIterator::PageIterator(Heapfile* heapfile, Page* directory) {
+DirectoryRecordIterator::DirectoryRecordIterator(Heapfile* heapfile, char* directory) {
     this->heapfile = heapfile;
     this->directory = directory;
-    // Initialize a record iterator pointer
-    PageRecordIterator *itr = new PageRecordIterator(directory);
-    this->iterator = itr;
-    // This is to discard the header of the directory
-    this->iterator->next();
-    this->current_page = new Page();
-    init_fixed_len_page(this->current_page, this->heapfile->page_size, _calc_directory_page_slot_size());    
+    this->directory_record = new DirectoryRecord();
+    this->curr_slot = 0; // the 0th slot is the header
+    this->directory_capacity = _directory_page_capacity(heapfile->page_size);
+    this->validNext = false;
 }
 
-PageIterator::~PageIterator() {
-    _free_page(this->current_page);
-}
-bool PageIterator::hasNext() {
-    return this->iterator->hasNext();
-}
-Page* PageIterator::next() {
-    assert(this->hasNext());
-    // Get the page offset of the next record
-    this->next_offset = _read_directory_record(this->iterator->get_current(), 0);
-    // Read the page data
-    _read_page_from_file(this->current_page, next_offset, this->heapfile->file_ptr);
-    return this->current_page;
+DirectoryRecordIterator::~DirectoryRecordIterator() {
+    delete this->directory_record;
 }
 
+bool DirectoryRecordIterator::hasNext() {
+    if (this->validNext) {
+        return true;
+    }
+    if (curr_slot >= this->directory_capacity) {
+        return this->validNext = false;
+    }
+    while (curr_slot < this->directory_capacity) {
+        curr_slot++;
+        _read_directory_record(this->directory_record, directory, curr_slot);
+        if (this->directory_record->page_offset != EMPTY_PAGE_OFFSET) {
+            return this->validNext = true;
+        }
+    }
+    return this->validNext = false;
+}
 
+DirectoryRecord* DirectoryRecordIterator::next() {
+    if (!this->validNext) {
+        assert(this->hasNext());
+    }
+    this->validNext = false;
+    return this->directory_record;
+}
 
 /**
  * RecordIterator constructor
  */
 RecordIterator::RecordIterator(Heapfile *heapfile) {
     this->heapfile = heapfile;
-    DirectoryIterator *itr = new DirectoryIterator(heapfile);
-    this->directoryIterator = itr;
-    this->pageIterator = NULL;
-    this->pageRecordIterator = NULL;
+    // Verify this heapfile is valid
+    this->curr_dir_header = new DirectoryHeader();
+    _read_directory_header_from_file(this->curr_dir_header, FIRST_DIRECTORY_OFFSET, heapfile);
+    assert(this->curr_dir_header->signature == DIRECTORY_RECORD_SIGNATURE);
+
+    // Initialize directory iterator
+    this->directory_itr = new DirectoryIterator(heapfile);
+
+    // Since the heapfile is valid, we can start parsing the first directory (always exists)
+    this->curr_dir = new char[heapfile->page_size];
+    this->directory_record_itr = new DirectoryRecordIterator(heapfile, this->curr_dir);
+
+    // Try to parse the first directory record
+    assert(this->directory_record_itr->hasNext());
+    this->curr_dir_record = this->directory_record_itr->next();
+
+    // First page iterator
+    this->curr_page = new Page();
+    init_fixed_len_page(this->curr_page, heapfile->page_size, RECORD_SIZE);
+    _read_page_from_file(this->curr_page, this->curr_dir_record->page_offset, heapfile);
+    this->page_itr = new PageRecordIterator(this->curr_page);
+
+    this->validNext = false;
 }
+
 RecordIterator::~RecordIterator() {
-    if(this->pageIterator)
-        delete this->pageIterator;
-    if(this->pageRecordIterator)
-        delete this->pageRecordIterator;
+    delete this->curr_dir_header;
+    delete this->directory_itr;
+    delete this->directory_record_itr;
+    delete this->page_itr;
+    delete this->curr_page;
+    delete this->curr_dir;
 }
+
 /**
- * Get the next non-empty record in the heap
+ * Get the next non-empty record in the heapfile
  */
 Record RecordIterator::next() {
-    assert(this->hasNext());
-    return *this->pageRecordIterator->next();
+    if (!this->validNext) {
+        assert(this->hasNext());
+    }
+    this->validNext = false;
+    return *page_itr->next();
 }
 
 /**
  * Check if the heap has anymore non-empty record
  */
 bool RecordIterator::hasNext() {
+    if (this->validNext) {
+        return true;
+    }
+
 CHECK_PAGE:
-    if(this->pageRecordIterator) {
-        if(this->pageRecordIterator->hasNext())
-            return true;
-        delete this->pageRecordIterator;
-        this->pageRecordIterator = NULL;
+    if(this->page_itr->hasNext()) {
+        return this->validNext = true;
+    } else {
+        goto CHECK_DIRECTORY_RECORDS;
     }
-CHECK_DIRECTORY:
-    if(this->pageIterator) {
-        if(this->pageIterator->hasNext()) {
-            Page *page = this->pageIterator->next();
-            this->pageRecordIterator = new PageRecordIterator(page);
-            goto CHECK_PAGE;
-        }
-        delete this->pageIterator;
-        this->pageIterator = NULL;
+
+CHECK_DIRECTORY_RECORDS:
+    if (this->directory_record_itr->hasNext()) {
+        // Go to the next directory record
+        this->curr_dir_record = this->directory_record_itr->next();
+        _read_page_from_file(this->curr_page, this->curr_dir_record->page_offset, heapfile);
+        delete this->page_itr;
+        this->page_itr = new PageRecordIterator(this->curr_page);
+        goto CHECK_PAGE;
+    } else {
+        goto CHECK_DIRECTORIES;
     }
-if(this->directoryIterator->hasNext()) {
-    Page *directory = this->directoryIterator->next();
-    this->pageIterator = new PageIterator(this->heapfile, directory);
-    goto CHECK_DIRECTORY;
-}
-return false;
+
+CHECK_DIRECTORIES:
+    if (this->directory_itr->hasNext()) {
+        // Go to the next directory
+        this->curr_dir = this->directory_itr->next();
+        delete this->directory_record_itr;
+        this->directory_record_itr = new DirectoryRecordIterator(heapfile, this->curr_dir);
+        goto CHECK_DIRECTORY_RECORDS;
+    }
+    return this->validNext = false;
 }

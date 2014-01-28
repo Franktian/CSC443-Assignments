@@ -86,7 +86,8 @@ int main( int argc, const char* argv[] )
         for (int slot = 0; slot < page->capacity; slot++) {
 
             // Read the page into records
-            bool success = read_fixed_len_page(page, slot, &record);
+            bool success = read_fixed_len_page(page, slot, &record, SCHEMA_ATTRIBUTE_LEN,
+                SCHEMA_ATTRIBUTES_NUM);
             // Read an empty page? 
 	    if (!success) {
 		if (HEAP_CSV_DEBUG) 
