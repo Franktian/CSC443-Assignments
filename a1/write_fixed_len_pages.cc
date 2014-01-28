@@ -75,7 +75,7 @@ int main( int argc, const char* argv[] )
         int slot = 0;
         while(getline(lineStream,dataField,',')) {
             char* attribute = new char[strlen(dataField.c_str())];
-            strcpy(attribute, dataField.c_str());
+            strncpy(attribute, dataField.c_str(), strlen(dataField.c_str()));
             record.at(slot) = attribute;
             slot++;
         } 
@@ -89,13 +89,14 @@ int main( int argc, const char* argv[] )
             fwrite ((char*)page->data, 1 , page->page_size , page_file); 
 
             // Initialize a new page to store the records
+	    delete (char*)page->data; // Prevent memory leak
             init_fixed_len_page(page, pageSize, RECORD_SIZE);
             index = 0;
             numPages++;
         }
     }
 
-    // process the remaining records
+    // Process the remaining records - write the page that is not full to page file.
     if(index != 0) {
         fwrite ((char*)page->data, 1 , page->page_size , page_file); 
         numPages++;

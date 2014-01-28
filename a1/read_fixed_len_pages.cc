@@ -45,8 +45,6 @@ int main(int argc, char **argv) {
 
     while (!feof(pageFile)) {
 
-        pageCount++;
-
         // For each page, iterate over all the slots and prints the records to terminal
         for (int i = 0; i < page.capacity; ++i) {
 
@@ -75,8 +73,8 @@ int main(int argc, char **argv) {
  		}
         }
 
-	char *position = (char*)page.data;
-        fread(position, 1, page.page_size, pageFile);
+        pageCount++;
+        fread((char*)page.data, 1, page.page_size, pageFile);
     }
 
     // Stop the timer
@@ -85,11 +83,12 @@ int main(int argc, char **argv) {
     long finish = _t.time * 1000 + _t.millitm;
     long time = finish - start;
 
+    fclose(pageFile);
+
     printf("NUMBER OF RECORDS: %d\n", recordCount);
     printf("NUMBER OF PAGES: %d\n", pageCount);
     printf("TIME: %ld milliseconds\n", time);
 
-    fclose(pageFile);
     return 0;
 }
 
