@@ -8,6 +8,13 @@ using namespace std;
 #define LIB_DEBUG 0
 /* ########## Part 1: Record Serialization ########## */
 
+void _init_fixed_len(Record* record) {
+    char content[SCHEMA_ATTRIBUTE_LEN] = "         ";
+    for(int i = 0; i < SCHEMA_ATTRIBUTES_NUM; i++){
+        record->push_back(content);
+    }
+}
+
 /**
  * Compute the number of bytes required to serialize record
  */
@@ -491,7 +498,7 @@ bool read_fixed_len_page(Page *page, int slot, Record *r, int attrLen = SCHEMA_A
         cout << "NUM OF SLOTS: " << numSlots << " " << page->slot_size << endl;
     
     // Slot input is invalid
-    assert(slot < numSlots && slot > 0);
+    assert(slot < numSlots && slot >= 0);
     
     // Slot is empty
     if (((char*)page->data)[slot] != 1) {
@@ -869,6 +876,7 @@ DirectoryIterator::DirectoryIterator(Heapfile* heapfile) {
     this->header = new DirectoryHeader();
     // Get the first header
     _locate_first_directory(this->header, this->heapfile);
+    this->validNext = true;
 }
 
 
@@ -878,14 +886,23 @@ DirectoryIterator::~DirectoryIterator() {
 }
 
 bool DirectoryIterator::hasNext() {
-    return header->next != FIRST_DIRECTORY_OFFSET;
+    if (validNext) {
+        return true;
+    }
+    if (header->next == FIRST_DIRECTORY_OFFSET) {
+        return validNext = false;
+    }
+    _read_directory_header_from_file(header, header->next, heapfile);
+    return validNext = true;
 }
 
 char* DirectoryIterator::next() {
     // Confirm we have another directory in the heafile
-    assert(this->hasNext());
-    _read_directory_header_from_file(header, header->next, heapfile);
+    if (!validNext) {
+        assert(this->hasNext());
+    }
     _read_directory_from_file(directory, header->offset, heapfile);
+    validNext = false;
     return this->directory;
 }
 
@@ -900,6 +917,8 @@ char* DirectoryIterator::next() {
     // Initialize the record
     this->current_record = new Record();
     this->next_record = new Record();
+    _init_fixed_len(this->current_record);
+    _init_fixed_len(this->next_record);
     this->validNext = false;
  }
 
@@ -988,15 +1007,16 @@ DirectoryRecord* DirectoryRecordIterator::next() {
 RecordIterator::RecordIterator(Heapfile *heapfile) {
     this->heapfile = heapfile;
     // Verify this heapfile is valid
-    this->curr_dir_header = new DirectoryHeader();
-    _read_directory_header_from_file(this->curr_dir_header, FIRST_DIRECTORY_OFFSET, heapfile);
-    assert(this->curr_dir_header->signature == DIRECTORY_RECORD_SIGNATURE);
+    DirectoryHeader* header= new DirectoryHeader();
+    _read_directory_header_from_file(header, FIRST_DIRECTORY_OFFSET, heapfile);
+    assert(header->signature == DIRECTORY_RECORD_SIGNATURE);
 
     // Initialize directory iterator
     this->directory_itr = new DirectoryIterator(heapfile);
+    assert(directory_itr->hasNext());
 
     // Since the heapfile is valid, we can start parsing the first directory (always exists)
-    this->curr_dir = new char[heapfile->page_size];
+    this->curr_dir = directory_itr->next();
     this->directory_record_itr = new DirectoryRecordIterator(heapfile, this->curr_dir);
 
     // Try to parse the first directory record
@@ -1007,18 +1027,16 @@ RecordIterator::RecordIterator(Heapfile *heapfile) {
     this->curr_page = new Page();
     init_fixed_len_page(this->curr_page, heapfile->page_size, RECORD_SIZE);
     _read_page_from_file(this->curr_page, this->curr_dir_record->page_offset, heapfile);
-    this->page_itr = new PageRecordIterator(this->curr_page);
+    this->page_record_itr = new PageRecordIterator(this->curr_page);
 
     this->validNext = false;
 }
 
 RecordIterator::~RecordIterator() {
-    delete this->curr_dir_header;
     delete this->directory_itr;
     delete this->directory_record_itr;
-    delete this->page_itr;
+    delete this->page_record_itr;
     delete this->curr_page;
-    delete this->curr_dir;
 }
 
 /**
@@ -1029,7 +1047,7 @@ Record RecordIterator::next() {
         assert(this->hasNext());
     }
     this->validNext = false;
-    return *page_itr->next();
+    return *page_record_itr->next();
 }
 
 /**
@@ -1041,7 +1059,7 @@ bool RecordIterator::hasNext() {
     }
 
 CHECK_PAGE:
-    if(this->page_itr->hasNext()) {
+    if(this->page_record_itr->hasNext()) {
         return this->validNext = true;
     } else {
         goto CHECK_DIRECTORY_RECORDS;
@@ -1052,8 +1070,8 @@ CHECK_DIRECTORY_RECORDS:
         // Go to the next directory record
         this->curr_dir_record = this->directory_record_itr->next();
         _read_page_from_file(this->curr_page, this->curr_dir_record->page_offset, heapfile);
-        delete this->page_itr;
-        this->page_itr = new PageRecordIterator(this->curr_page);
+        delete this->page_record_itr;
+        this->page_record_itr = new PageRecordIterator(this->curr_page);
         goto CHECK_PAGE;
     } else {
         goto CHECK_DIRECTORIES;
@@ -1068,4 +1086,57 @@ CHECK_DIRECTORIES:
         goto CHECK_DIRECTORY_RECORDS;
     }
     return this->validNext = false;
+}
+
+/* Page iterators */
+PageIterator::PageIterator(Heapfile* heapfile) {
+    this->heapfile = heapfile;
+
+    // Verify this heapfile is valid
+    DirectoryHeader* header= new DirectoryHeader();
+    _read_directory_header_from_file(header, FIRST_DIRECTORY_OFFSET, heapfile);
+    assert(header->signature == DIRECTORY_RECORD_SIGNATURE);
+
+    // Initialize directory iterator
+    this->directory_itr = new DirectoryIterator(heapfile);
+    assert(directory_itr->hasNext());
+
+    // Since the heapfile is valid, we can start parsing the first directory (always exists)
+    this->curr_dir = directory_itr->next();
+    this->directory_record_itr = new DirectoryRecordIterator(heapfile, this->curr_dir);
+
+    this->validNext = false;
+}
+
+PageIterator::~PageIterator() {
+    delete this->directory_itr;
+    delete this->directory_record_itr;
+}
+
+PageID PageIterator::next() {
+    if (!this->validNext) {
+        assert(this->hasNext());
+    }
+    this->validNext = false;
+    return directory_record_itr->next()->page_offset;
+}
+
+bool PageIterator::hasNext() {
+    if (validNext) {
+        return true;
+    }
+CHECK_DIRECTORY_RECORDS:
+    if (directory_record_itr->hasNext()) {
+        return validNext = true;
+    } else {
+        goto CHECK_DIRECTORIES;
+    }
+CHECK_DIRECTORIES:
+    if (directory_itr->hasNext()) {
+        curr_dir = directory_itr->next();
+        delete this->directory_record_itr;
+        this->directory_record_itr = new DirectoryRecordIterator(heapfile, curr_dir);
+        goto CHECK_DIRECTORY_RECORDS;
+    }
+    return validNext = false;
 }

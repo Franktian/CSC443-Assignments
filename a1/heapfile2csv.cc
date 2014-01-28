@@ -10,7 +10,7 @@
 #include "library.h"
 
 #define RECORD_SIZE 1000
-#define HEAP_CSV_DEBUG 1
+#define HEAP_CSV_DEBUG 0
 
 using namespace std;
 
@@ -19,12 +19,12 @@ int main( int argc, const char* argv[] )
     // Process the input parameters.
     if (argc != 4) {
         cout << "ERROR: invalid input parameters!" << endl;
-        cout << "Please put: <csv_file> <heapfile> <page_size>" << endl;
+        cout << "Please put: <heapfile> <csv_file> <page_size>" << endl;
         exit(1);
     }
 
-    const char* csv_file = argv[1];
-    const char* heapfile = argv[2];
+    const char* heapfile = argv[1];
+    const char* csv_file = argv[2];
     int page_size =  atoi((argv[3]));
 
     //Open csv_file to be written.
@@ -55,11 +55,14 @@ int main( int argc, const char* argv[] )
     ftime(&_t);
     long start = _t.time * 1000 + _t.millitm;
 
-    int pageID = 0;
+    int pageID;
     int numRecords = 0;
     //int firstRecord = 1;
 
-    while(true) {
+    PageIterator* iterator = new PageIterator(pHeapfile);
+    while(iterator->hasNext()) {
+
+        pageID = iterator->next();
 
         // Initialize the record vector - 100 attributes of empty strings.
         // Otherwise, it causes weird errors.
@@ -82,7 +85,7 @@ int main( int argc, const char* argv[] )
         if (!*(char *)page->data) 
 	    break;
 
-	// Process the page and insert the records into CSV file.
+	    // Process the page and insert the records into CSV file.
         for (int slot = 0; slot < page->capacity; slot++) {
 
             // Read the page into records
@@ -115,8 +118,7 @@ int main( int argc, const char* argv[] )
 		    //fprintf(csvFile, "\n");
                 }
             }
-        }	
-        pageID++;
+        }
     }
 
     // Finished converting, close the files.

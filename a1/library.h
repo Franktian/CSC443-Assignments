@@ -171,6 +171,7 @@ private:
 	Heapfile* heapfile;
 	char* directory;
 	DirectoryHeader *header;		// Points to the header record of the current directory
+	bool validNext;
 };
 
 /**
@@ -234,13 +235,27 @@ private:
 	
 	DirectoryIterator *directory_itr;
 	DirectoryRecordIterator *directory_record_itr;
-	PageRecordIterator *page_itr;
+	PageRecordIterator *page_record_itr;
 	
 	bool validNext;
-	DirectoryHeader* curr_dir_header;
 	DirectoryRecord* curr_dir_record;
 	char* curr_dir;
 	Page* curr_page;
+};
+
+/* Used to iterate through all pages in the heapfile */
+class PageIterator {
+public:  
+	PageIterator(Heapfile *heapfile);
+	~PageIterator();
+	bool hasNext();
+	PageID next();
+private:
+	Heapfile* heapfile;
+	bool validNext;
+	char* curr_dir;
+	DirectoryIterator *directory_itr;
+	DirectoryRecordIterator *directory_record_itr;
 };
 
 #endif
