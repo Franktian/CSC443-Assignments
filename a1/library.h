@@ -140,25 +140,26 @@ public:
 private:
 	Heapfile* heapfile;
 	Page* directory;
-	Record *header;
-	Offset current_offset;
+	Record *header;		// Points to the header record of the current directory
+	Offset current_offset;  // Offset of the current directory in the heapfile
 	Offset next_offset;
 };
 
 /**
  * Page Record Iterator
+ * Iterate through all the records in a page data structure
  */
 class PageRecordIterator {
 public:
 	PageRecordIterator(Page *page);
 	bool hasNext();
 	Record* next();
-	Record* get_current();
+	Record* get_current();  // Get the current record in the iterator
 private:
 	Record* current_record;
 	Page *page;
-	int slot;
-	int capacity;
+	int slot;  // Indicate the current slot number
+	int capacity;  // Indicate the capacity of the page
 };
 
 /* Page iterator class for a directory 
@@ -177,8 +178,8 @@ private:
 	Heapfile* heapfile;
 	Page* directory;
 	Page* current_page;
-	PageRecordIterator *iterator;
-	Offset next_offset;
+	PageRecordIterator *iterator;	// iterates through the records of directory page
+	Offset next_offset;		// use to read the data page from the heapfile
 };
 
 /* Record iterator class for iterating through 
