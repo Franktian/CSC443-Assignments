@@ -1,6 +1,7 @@
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <fstream>
 #include <sys/timeb.h>

@@ -1,5 +1,6 @@
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>

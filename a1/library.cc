@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <assert.h>
+#include <cstdlib>
 
 using namespace std;
 
@@ -840,7 +841,7 @@ void write_page(Page *page, Heapfile *heapfile, PageID pid) {
 
     assert(slot != -1);
 
-    int page_offset = record->page_offset;
+    Offset page_offset = record->page_offset;
 
     // Just to make sure our current model is working
     assert(page_offset == pid);
