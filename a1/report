@@ -58,3 +58,31 @@ sqlite3 performance
 	user 0.060795 sys 0.027718
 
 The overall performance of sqlite3 is significantly better
+
+////////// Test for _fixed_len_page
+///// Time is in millisecond
+	16000
+		write
+		298
+		read
+		3409
+	32000
+		write
+		287
+		read
+		3374
+	64000
+		write
+		286
+		read
+		3420
+	128000
+		write
+		289
+		read
+		3404
+	256000
+		write
+		286
+		read
+		3447
