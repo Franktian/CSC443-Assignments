@@ -761,7 +761,6 @@ PageID alloc_page(Heapfile *heapfile) {
     // Find the next available slot for a page record in directory
     DirectoryRecord* record = new DirectoryRecord();
     int slot = _locate_available_slot(record, directory, heapfile->page_size);
-    cout << "The available directory record is at: " << slot << endl;
     assert(slot != -1);
 
     // Create a page record to store in this directory    
@@ -916,19 +915,15 @@ char* DirectoryIterator::next() {
  PageRecordIterator::PageRecordIterator(Page *page) {
     this->page = page;
     this->curr_slot = 0;
-    this->next_slot = this->curr_slot + 1;
     this->capacity = fixed_len_page_capacity(page);
     // Initialize the record
     this->current_record = new Record();
-    this->next_record = new Record();
     _init_fixed_len(this->current_record);
-    _init_fixed_len(this->next_record);
     this->validNext = false;
  }
 
  PageRecordIterator::~PageRecordIterator() {
     delete this->current_record;
-    delete this->next_record;
  }
 
  bool PageRecordIterator::hasNext() {
@@ -936,17 +931,16 @@ char* DirectoryIterator::next() {
         return true;
     }
     // the slot number cannot be greater than the capacity
-    if (this->next_slot >= this->capacity)
+    if (this->curr_slot >= this->capacity)
         return this->validNext = false;
 
     // Get the next non-empty record in the page
-    while (this->next_slot < this->capacity) {
-        if (read_fixed_len_page(this->page, this->next_slot, this->next_record)) {
-            this->validNext = true;
-            this->next_slot ++;
-            return true;
+    while (this->curr_slot < this->capacity) {
+        if (read_fixed_len_page(this->page, this->curr_slot, this->current_record)) {
+            this->curr_slot++;
+            return this->validNext = true;
         }
-        this->next_slot ++;
+        this->curr_slot++;
     }
     return this->validNext = false;
  }
@@ -955,9 +949,6 @@ Record* PageRecordIterator::next() {
     if (!this->validNext) {
         assert(this->hasNext());
     }
-    swap(this->current_record, this->next_record);
-    this->curr_slot = this->next_slot;
-    this->next_slot++;
     this->validNext = false;
     return this->current_record;
 }
@@ -1071,7 +1062,6 @@ CHECK_PAGE:
 
 CHECK_DIRECTORY_RECORDS:
     if (this->directory_record_itr->hasNext()) {
-        // Go to the next directory record
         this->curr_dir_record = this->directory_record_itr->next();
         _read_page_from_file(this->curr_page, this->curr_dir_record->page_offset, heapfile);
         delete this->page_record_itr;
@@ -1083,7 +1073,6 @@ CHECK_DIRECTORY_RECORDS:
 
 CHECK_DIRECTORIES:
     if (this->directory_itr->hasNext()) {
-        // Go to the next directory
         this->curr_dir = this->directory_itr->next();
         delete this->directory_record_itr;
         this->directory_record_itr = new DirectoryRecordIterator(heapfile, this->curr_dir);
@@ -1137,7 +1126,6 @@ CHECK_DIRECTORY_RECORDS:
     }
 CHECK_DIRECTORIES:
     if (directory_itr->hasNext()) {
-        cout << "Changing directory" << endl;
         curr_dir = directory_itr->next();
         delete this->directory_record_itr;
         this->directory_record_itr = new DirectoryRecordIterator(heapfile, curr_dir);

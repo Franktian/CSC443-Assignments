@@ -186,10 +186,8 @@ public:
 	Record* next();
 private:
 	Record* current_record;
-	Record* next_record;
 	Page *page;
 	int curr_slot;  // Indicate the current slot number
-	int next_slot;
 	int capacity;  // Indicate the capacity of the page
 	bool validNext;
 };

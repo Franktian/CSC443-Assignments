@@ -105,10 +105,10 @@ int main( int argc, const char* argv[] )
 	    // substring is in the set, count is 1
             // The substring has been processed.
 	    if (QUERY_DEBUG) 
-		cout << "The substring < " << substring << " > has been processed!" << endl;
-            fseek(T, cursor_position, SEEK_SET);
-            total_read+=SUBSTRING_LEN;
-            continue;   
+            cout << "The substring < " << substring << " > has been processed!" << endl;
+        fseek(T, cursor_position, SEEK_SET);
+        total_read+=SUBSTRING_LEN;
+        continue;   
 	} 
 
         if (QUERY_DEBUG) cout << "Prossing data : " << substring << endl;
@@ -141,8 +141,8 @@ int main( int argc, const char* argv[] )
         fwrite(" ", sizeof(char), 1, temp);
 	fwrite(count_string, sizeof(char), strlen(count_string), temp);
         fwrite("\n", sizeof(char), 1, temp);
-        cout << "Substring is: " << substring << endl;
-        cout << "Occurrence Count So Far: " << count << endl;
+        // cout << "Substring is: " << substring << endl;
+        // cout << "Occurrence Count So Far: " << count << endl;
 
         fseek(T, cursor_position, SEEK_SET);
         total_read+=SUBSTRING_LEN;
