@@ -662,7 +662,7 @@ Offset _locate_directory(DirectoryHeader* header, Offset page_offset, Heapfile* 
 
 int _locate_available_slot(DirectoryRecord* record, char* directory, int size) {
     int capacity = _directory_page_capacity(size);
-    for (int i = 1; i < capacity; ++i) // 1 is the header
+    for (int i = 1; i < capacity; ++i) // 0 is the header
     {
         _read_directory_record(record, directory, i);
         if (record->page_offset == EMPTY_PAGE_OFFSET) {
@@ -761,6 +761,7 @@ PageID alloc_page(Heapfile *heapfile) {
     // Find the next available slot for a page record in directory
     DirectoryRecord* record = new DirectoryRecord();
     int slot = _locate_available_slot(record, directory, heapfile->page_size);
+    cout << "The available directory record is at: " << slot << endl;
     assert(slot != -1);
 
     // Create a page record to store in this directory    
@@ -778,7 +779,10 @@ PageID alloc_page(Heapfile *heapfile) {
     _write_directory_to_file(directory, directory_offset, heapfile);
 
     // Check if the current directory is full
-    if (slot == _directory_page_capacity(heapfile->page_size)) {
+    // the slot number starts at 0, so -1 here for the last slot number
+    if (slot == _directory_page_capacity(heapfile->page_size) - 1) {
+
+        cout << "The current directory is full, creating new directory" << endl;
         // If full, we need to create a new directory
         char* new_directory = new char[heapfile->page_size];
         
@@ -1133,6 +1137,7 @@ CHECK_DIRECTORY_RECORDS:
     }
 CHECK_DIRECTORIES:
     if (directory_itr->hasNext()) {
+        cout << "Changing directory" << endl;
         curr_dir = directory_itr->next();
         delete this->directory_record_itr;
         this->directory_record_itr = new DirectoryRecordIterator(heapfile, curr_dir);

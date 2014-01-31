@@ -87,7 +87,7 @@ int main( int argc, const char* argv[] )
         if (index == page->capacity) {
             
             PageID id = alloc_page(hFile);
-            cout << "allocated page ID: " << id << endl;
+            // cout << "allocated page ID: " << id << endl;
             write_page(page, hFile, id);
             
             // Initialize new page
