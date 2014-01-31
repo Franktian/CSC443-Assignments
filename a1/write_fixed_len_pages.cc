@@ -81,7 +81,7 @@ int main( int argc, const char* argv[] )
         } 
 
         // Write the record to page
-        write_fixed_len_page(page, index++, &record);
+        write_fixed_len_page(page, index++, &record, SCHEMA_ATTRIBUTE_LEN);
         numRecords++;
 
         // If page is full, write the current page to file create a new page. 

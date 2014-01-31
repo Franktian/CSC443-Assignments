@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
 		// For empty slots in the page, we do not increment the record count.
 		// read_fixed_len_page() return false means the slot is empty.
-                if (read_fixed_len_page(&page, i, &r)) {
+                if (read_fixed_len_page(&page, i, &r, SCHEMA_ATTRIBUTE_LEN,SCHEMA_ATTRIBUTES_NUM)) {
 		    // Parse the serialized data and print it to the terminal.
                     for(int i = 0; i < r.size(); i++) {
 			// Last attribute - append a new line charater
