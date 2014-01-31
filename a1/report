@@ -1,0 +1,60 @@
+Tuple number 10000
+
+With Primary KEY
+	A - Z
+	user 0.000720 sys 0.000151
+	A - H
+	user 0.000928 sys 0.000435
+	A - B
+	user 0.000192 sys 0.000050
+
+Without Primary KEY
+	A - Z
+	user 0.005743 sys 0.003841
+	A - H
+	0.003067 sys 0.002130
+	A - B
+	user 0.002782 sys 0.000111
+
+query.cc
+	PageSize: 32000
+		A - Z
+		3816 milliseconds
+		A - H
+		461 milliseconds
+		A - B
+		99 milliseconds
+	PageSize: 64000
+		A - Z
+		3957 milliseconds
+		A - H
+		512 milliseconds
+		A - B
+		97 milliseconds
+		
+/////////////// Test for query.cc
+Number of Record 10000
+	from AAAAAAAAAA tot ZZZZZZZZZZ
+	page size 16000
+	14707 = 14s
+	page size 32000
+	14551 = 14s
+	page size 64000
+	14584 = 14s
+	page size 128000
+	14671 = 14s
+	page size 256000
+	14491 = 14s
+The choice of the page size has rare effect on the query running time
+
+The range from start to end has linear relationship with the query running time
+
+///////////// Test for sqlite3
+
+the query runs faster
+sqlite3 performance
+	user 0.050678 sys 0.018423
+	after create a1_index on a1
+	user 0.060795 sys 0.027718
+
+The overall performance of sqlite3 is significantly better
