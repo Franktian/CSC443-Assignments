@@ -18,7 +18,10 @@ using namespace std;
 
 int main( int argc, const char* argv[] )
 {
-  
+    cout << "Start the timer" << endl;
+    struct timeb _t;                
+    ftime(&_t);
+    long startt = _t.time * 1000 + _t.millitm; 
     // Process the input parameters.
     if (argc != 5){
 	cout << "ERROR: invalid input parameters!" << endl;
@@ -152,5 +155,11 @@ int main( int argc, const char* argv[] )
     fclose(temp);
     fclose(T);
     cout << "NUMBER OF RECORDS : " << numRec << endl;
+
+    cout << "Stop the timer" << endl;
+    ftime(&_t);
+    long finish = _t.time * 1000 + _t.millitm;
+    long _time = finish - startt;
+    cout << "TIME : " << _time << " milliseconds" << endl;
     return 0;
 }
