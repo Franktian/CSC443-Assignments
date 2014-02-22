@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sys/timeb.h>
+#include <string>
 
 #include "library.h"
 
@@ -63,10 +64,14 @@ int main(int argc, char **argv) {
                     for(int i = 0; i < r.size(); i++) {
 			// Last attribute - append a new line charater
                         if(i == r.size() - 1) {
-			    cout << (char*) r.at(i) << endl;
+                            char buffer[11];
+                            strncpy(buffer, (char*) r.at(i), 11);
+			    cout << buffer << endl;
                         } 
 		        else {
-		            cout << (char*) r.at(i) << ",";
+                    char buffer[11];
+                    strncpy(buffer, (char*) r.at(i), 11);
+		            cout << buffer << ",";
                         }
                     }
                     recordCount++;
