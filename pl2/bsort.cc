@@ -9,8 +9,8 @@
 
 #include "leveldb/db.h"
 
-#define DEBUG_TERM 0;
-#define DEBUG_FILE 0;
+#define DEBUG_TERM 0
+#define DEBUG_FILE 0
 
 using namespace std;
 
@@ -74,8 +74,7 @@ int main(int argc, const char* argv[]) {
 
 		leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
   		for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    		cout << it->key().ToString() << ": "  << it->value().ToString() << endl;
-    		fwrite()
+    		cout << it->key().ToString().c_str() << ": "  << it->value().ToString().c_str() << endl;
   		}
 
 	  	assert(it->status().ok());  // Check for any errors found during the scan
@@ -86,8 +85,7 @@ int main(int argc, const char* argv[]) {
 	// Print all key/value pairs in a database to a file called "b+Index"
 	if (DEBUG_FILE) {
 		cout << "Print key/value pairs to b+index file!" << endl;
-		string fileName = "b+Index";
-		FILE *bIndex = fopen(fileName, "w");
+		FILE *bIndex = fopen("b+Index", "w");
 		if (bIndex) {
 			cout << "Error: Could not open the b+Index file!" << endl;
 			goto stop_timer;
@@ -95,14 +93,14 @@ int main(int argc, const char* argv[]) {
 
 		leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
   		for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    		cout << it->key().ToString() << ": "  << it->value().ToString() << endl;
-    		fwrite(it->key().ToString(), sizeof(char), strlen(it->key().ToString()), fileName);
-    		fwrite(":", sizeof(char), 1, fileName);
-    		fwrite(it->value().ToString(), sizeof(char), strlen(it->value().ToString()), fileName);
-    		fwrite("\n", sizeof(char), 1, fileName);
+    		cout << it->key().ToString().c_str() << ": "  << it->value().ToString().c_str() << endl;
+    		fwrite(it->key().ToString().c_str(), sizeof(char), strlen(it->key().ToString().c_str()), bIndex);
+    		fwrite(":", sizeof(char), 1, bIndex);
+    		fwrite(it->value().ToString().c_str(), sizeof(char), strlen(it->value().ToString().c_str()), bIndex);
+    		fwrite("\n", sizeof(char), 1, bIndex);
   		}
 
-     	fclose(fileName);
+     	fclose(bIndex);
 	  	assert(it->status().ok());  // Check for any errors found during the scan
   		delete it;
 	}

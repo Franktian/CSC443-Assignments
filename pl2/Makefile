@@ -8,5 +8,11 @@ all: library.o
 library.o: library.cc library.h
 	$(CC) -o $@ $(CCFLAGS)  -c $<
 
+msort: msort.cc library.o
+	$(CC) -o $@ $(CCFLAGS)  -c $<
+
+bsort: bsort.cc
+	$(CC) -o bsort bsort.cc $(OPTS)
+
 clean:
 	rm -rf *.o leveldb_dir

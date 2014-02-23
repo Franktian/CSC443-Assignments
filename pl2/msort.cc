@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define RECORD_SIZE 9;
+#define RECORD_SIZE 9
 
 
 int main( int argc, const char* argv[] )
@@ -57,20 +57,19 @@ int main( int argc, const char* argv[] )
  	  int numRecs = ftell(inputFile)/RECORD_SIZE;
 	  fseek(inputFile, 0L, SEEK_SET);
 
-    FILE *temp_out = fopen("temp.out", "w+");
+    FILE *temp_out = fopen("temp.out", "w");
     if (!temp_out) {
         cout << "Error: Cannot open the temp output file!" << endl;
         exit(1);
     }
 
-    int i = 0;
-
+    int run_length = 0;
     // Produce ceil(mem_capacity/(k+1)) numbers of sorted segments
     mk_runs(inputFile, temp_out, floor(mem_capacity/(k+1)));
 
     // Determine the buffer size and make sure it is multiple of 9
     int buf_sz = 0;
-    int adjustment = floor(mem_capacity/(k+1)) % 9;
+    int adjustment = (int)(floor(mem_capacity/(k+1))) % 9;
     if (adjustment)
         buf_sz = floor(mem_capacity/(k+1)) - adjustment;
     else
@@ -85,7 +84,7 @@ int main( int argc, const char* argv[] )
 
     while (ways > 1) {
         run_length *= k;
-        ways = merge_runs(tempFile, outputFile, run_length, k, buf_sz);
+        ways = merge_runs(temp_out, outputFile, run_length, k, buf_sz);
         if (ways < 0) {
             cout << "Error: Something wrong in the merge_runs()! --- " << ways << endl;
             exit(1);
