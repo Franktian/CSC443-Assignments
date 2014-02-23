@@ -27,6 +27,10 @@ bool RunIterator::hasNext() {
 	return this->curr_pos >= this->run_length;
 }
 
+long RunIterator::runLength() {
+	return this->run_length;
+}
+
 void read_from_file(char *buf, long offset, FILE *fp, long length) {
 	fseek(fp, offset, SEEK_SET);
 	fread(buf, sizeof(char), length, fp);
