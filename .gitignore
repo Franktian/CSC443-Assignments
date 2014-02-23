@@ -1,2 +1,3 @@
 *.o
 testbin
+leveldb-1.15.0
