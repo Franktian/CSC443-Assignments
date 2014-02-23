@@ -21,7 +21,7 @@ public:
 
 	bool hasNext();
 
-	long runLength();
+	long getRunLength();
 private:
 	int curr_pos;
 	int run_length;

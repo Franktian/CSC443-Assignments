@@ -27,7 +27,7 @@ bool RunIterator::hasNext() {
 	return this->curr_pos >= this->run_length;
 }
 
-long RunIterator::runLength() {
+long RunIterator::getRunLength() {
 	return this->run_length;
 }
 
