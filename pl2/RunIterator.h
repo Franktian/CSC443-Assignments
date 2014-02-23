@@ -20,6 +20,8 @@ public:
 	Record next();
 
 	bool hasNext();
+
+	long getRunLength();
 private:
 	int curr_pos;
 	int run_length;

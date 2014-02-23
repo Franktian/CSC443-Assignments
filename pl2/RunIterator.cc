@@ -12,7 +12,7 @@ RunIterator::~RunIterator() {
 	delete this->buf;
 }
 
-Record RunIterator::next() {
+Record* RunIterator::next() {
 	if (!this->hasNext()) {
 		return NULL;
 	}
@@ -25,6 +25,10 @@ Record RunIterator::next() {
 
 bool RunIterator::hasNext() {
 	return this->curr_pos >= this->run_length;
+}
+
+long RunIterator::getRunLength() {
+	return this->run_length;
 }
 
 void read_from_file(char *buf, long offset, FILE *fp, long length) {
