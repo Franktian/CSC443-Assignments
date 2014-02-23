@@ -4,7 +4,7 @@
 
 typedef char* Record; // length is 9
 
-typedef unsigned long Offset;
+typedef long Offset;
 
 /**
  * creates runs of length `run_length` in
@@ -14,6 +14,7 @@ typedef unsigned long Offset;
 void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length);
 
 class RunIterator {
+public:
     /**
      * creates an iterator using the `buf_size` to
      * scan through a run that starts at `start_pos`
@@ -27,7 +28,7 @@ class RunIterator {
     Record next();
 };
 
-void merge_runs(FILE *out_fp, 
-                RunIterator iterators[], 
-                int num_iterators, 
-                long buf_size);
+/**
+ * Return the number of runs remains after the merge runs
+ */
+int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size);
