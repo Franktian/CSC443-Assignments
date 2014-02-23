@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 class RunIterator {
 public:
 	/**
@@ -23,4 +24,5 @@ private:
 	int curr_pos;
 	int run_length;
 	char *buf;
-}
+};
+void read_from_file(char *buf, long offset, FILE *fp, long length);
