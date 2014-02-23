@@ -12,7 +12,7 @@ RunIterator::~RunIterator() {
 	delete this->buf;
 }
 
-Record RunIterator::next() {
+Record* RunIterator::next() {
 	if (!this->hasNext()) {
 		return NULL;
 	}
