@@ -79,11 +79,15 @@ void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
     delete[] run_buf;
 }
 
+///////////////Frank//////////////
+
+
 RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_size) {
     this->curr_pos = 0;
     this->run_length = run_length;
-    this->buf = (char *)malloc(buf_size);
-    _read_from_file(this->buf, start_pos, fp, run_length);
+    this->buf = (char *)malloc(buf_size * RECORD_LEN);
+    fseek(fp, start_pos, SEEK_SET);
+    fread(this->buf, RECORD_LEN, buf_size, fp);
 }
 
 RunIterator::~RunIterator() {
@@ -95,24 +99,19 @@ Record RunIterator::next() {
         return NULL;
     }
 
-    Record *record;
-    strncpy((char *)record, (const char *)this->buf[this->curr_pos], RECORD_LEN);
+    Record record = (Record)malloc(RECORD_LEN);
+    memcpy(record, (Record)this->buf[this->curr_pos], RECORD_LEN);
     this->curr_pos += RECORD_LEN;
-    return *record;
+    return record;
 }
 
 bool RunIterator::hasNext() {
     return this->curr_pos < this->run_length;
 }
 
-long RunIterator::getRunLength() {
-    return this->run_length;
-}
+///////////////Frank//////////////
 
-void _read_from_file(char *buf, long offset, FILE *fp, long length) {
-    fseek(fp, offset, SEEK_SET);
-    fread(buf, sizeof(char), length, fp);
-}
+
 
 
 bool _not_all_null(char** records, int size) {
