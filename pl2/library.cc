@@ -76,7 +76,7 @@ void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
     }
 
     // Finish and free memory
-    delete run_buf;
+    delete[] run_buf;
 }
 
 RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_size) {
@@ -193,23 +193,26 @@ int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size)
 
     Offset file_size = _get_eof_offset(in_fp);
 
-    int num_merges = floor(file_size / k) + 1;
-    int num_runs = floor(file_size / run_length) + 1;
+    int num_runs = ceil(file_size / run_length);
+    int num_merges = ceil(num_runs / k);
     int last_merge_num_runs = num_runs % num_merges;
 
     int curr_merge = 0;
     int file_pos = 0;
     int num_runs_remain = 0;
-    while (curr_merge < num_merges) {
-        Offset merge_size = file_pos + run_length*k < file_size ? run_length*k : file_size - file_pos;
-        _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, k, buf_size);
+    // The complete k-way merges
+    while (curr_merge < num_merges - 1) {
+        _merge(in_fp, out_fp, file_pos, run_length*k, file_pos, run_length, k, buf_size);
         file_pos += run_length*k;
         num_runs_remain ++;
     }
+    // The last merge run may not always be k-way
+    Offset merge_size = file_size - file_pos;
     if (last_merge_num_runs > 0) {
-        Offset merge_size = file_size - file_pos;
         _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, last_merge_num_runs, buf_size);
-        num_runs_remain ++;
+    } else {
+        _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, k, buf_size);
     }
+    num_runs_remain ++;
     return num_runs_remain;
 }
