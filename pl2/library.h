@@ -26,6 +26,14 @@ public:
      * iterator reads the end of the run.
      */
     Record next();
+
+    bool hasNext();
+
+    long getRunLength();
+private:
+    int curr_pos;
+    int run_length;
+    char *buf;
 };
 
 /**
