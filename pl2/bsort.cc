@@ -59,7 +59,7 @@ int main(int argc, const char* argv[]) {
 		stringstream lineStream(line); // lineStream is used to process the record read from the csv fil
 		string dataField; // contains the attribute of the record.
 
-		getline(lineStream,dataField,',');
+		getline(lineStream,dataField);
 
 		// Since the record has only one attribute, the value field will be null.
 		leveldb::Slice key = dataField.c_str();
