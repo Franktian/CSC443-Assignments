@@ -10,7 +10,7 @@
 Offset _read_chunk_from_file(char* chunk, Offset start,
                             Offset chunk_size, FILE *file_ptr) {
     fseek(file_ptr, start, SEEK_SET);
-    return fread(chunk, chunk_size, 1, file_ptr);
+    return fread(chunk, 1, chunk_size, file_ptr);
 }
 
 /** 
@@ -20,7 +20,7 @@ Offset _read_chunk_from_file(char* chunk, Offset start,
 void _write_chunk_to_file(char* chunk, Offset start, Offset chunk_size, 
                         FILE *file_ptr, bool start_begin = true) {
     fseek(file_ptr, start, start_begin ? SEEK_SET : SEEK_END);
-    fwrite(chunk, chunk_size, 1, file_ptr);
+    fwrite(chunk, 1, chunk_size, file_ptr);
     fflush(file_ptr);
 }
 
@@ -103,9 +103,7 @@ RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_siz
 
     this->fp = fp;
 
-
-    fseek(this->fp, this->read_curr, SEEK_SET);
-    fread(this->buf, RECORD_LEN, this->buf_length, this->fp);  // read a buffer of records
+    _read_chunk_from_file(buf, read_curr, buf_size, fp);
 }
 
 RunIterator::~RunIterator() {
@@ -116,8 +114,7 @@ Record RunIterator::next() {
 
     if (this->buf_curr >= this->buf_end) {
         if (read_curr < read_end) {
-            fseek(fp, this->read_curr, SEEK_SET);
-            fread(this->buf, RECORD_LEN, this->buf_length, this->fp);
+            _read_chunk_from_file(buf, read_curr, buf_length, fp);
             this->buf_curr = 0;
             if (this->buf_length >= this->read_end - this->read_curr) {
                 this->buf_end = this->read_end - this->read_curr;

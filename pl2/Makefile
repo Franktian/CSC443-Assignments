@@ -3,7 +3,7 @@ CC = g++
 OPTS = -I $(LEVELDB_DIR)/include -lpthread $(LEVELDB_DIR)/libleveldb.a
 CCFLAGS = -O3 -Wall -g -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 # -pedantic
 
-all: library.o
+all: library.o msort bsort
 
 library.o: library.cc library.h
 	$(CC) -o $@ $(CCFLAGS)  -c $<

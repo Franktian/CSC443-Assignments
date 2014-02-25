@@ -21,7 +21,7 @@ int main( int argc, const char* argv[] ) {
 	char* buf = new char[9];
 
 	fseek(input, 0, SEEK_SET);
-    fread(buf, 9, 1, input);
+    fread(buf, 1, 9, input);
 
     for (int i = 0; i < 9; i++)
     {
