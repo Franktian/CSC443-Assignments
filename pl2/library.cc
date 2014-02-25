@@ -191,7 +191,7 @@ void _merge(FILE* in_fp, FILE* out_fp, Offset merge_start, Offset merge_size, Of
     
     Offset last_run_length = merge_size % run_length;
 
-    cout << "Merging " << num_runs << " runs, with total size " << merge_size << endl;
+    cout << "Merging " << num_runs << " runs, with total size " << merge_size << " bytes" << endl;
     // cout << "The last in this merge is size " << last_run_length << endl;
 
     int curr_run = 0;
@@ -266,7 +266,7 @@ int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size)
     Offset file_size = _get_eof_offset(in_fp);
 
     int num_runs = _ceil(file_size, run_length);
-    cout << "Current number of runs: " << num_runs << ", size: " << run_length << " bytes" << endl;
+    cout << "" << k << "-way merge iteration with " << num_runs << " runs" << endl;
     int num_merges = _ceil(num_runs, k);
     int last_merge_num_runs = num_runs % k;
 

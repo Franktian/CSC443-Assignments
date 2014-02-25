@@ -44,15 +44,15 @@ int main( int argc, const char* argv[] )
     }
 
     // Determine how many records to be processed
-    fseek(inputFile, 0, SEEK_END);
- 	long numRecs = ftell(inputFile)/RECORD_LEN;
-	fseek(inputFile, 0, SEEK_SET);
-    cout << "File to sort has " << numRecs << " records" << endl;
+ //    fseek(inputFile, 0, SEEK_END);
+ // 	long numRecs = ftell(inputFile)/RECORD_LEN;
+	// fseek(inputFile, 0, SEEK_SET);
+    // cout << "File to sort has " << numRecs << " records" << endl;
     
     char temp_out1_name[10] = "temp.out1";
     char temp_out2_name[10] = "temp.out2";
-    FILE *temp_out1 = fopen(temp_out1_name, "w");
-    FILE *temp_out2 = fopen(temp_out2_name, "w");
+    FILE *temp_out1 = fopen(temp_out1_name, "w+");
+    FILE *temp_out2 = fopen(temp_out2_name, "w+");
     if (!temp_out1 || !temp_out2) {
         cout << "Error: Cannot open the output file!" << endl;
         exit(1);
@@ -65,14 +65,14 @@ int main( int argc, const char* argv[] )
         buf_sz -= adjustment;
 
     // Lets let run length based on the buf_sz
-    int run_length = buf_sz;
+    long run_length = buf_sz;
 
     cout << "Buffer size is " << buf_sz << " bytes"<< endl;
 
     // Make runs with each run having size run_length
     int num_runs = mk_runs(inputFile, temp_out1, run_length);
-    cout << "Created " << num_runs << " runs each with size " << run_length << " bytes" << endl;
-
+    cout << "Created " << num_runs << " initial runs, each with size " << run_length << " bytes" << endl;
+    
     // Merge Sort iterations
     while (num_runs > 1) {
         num_runs = merge_runs(temp_out1, temp_out2, run_length, k, buf_sz);
@@ -93,10 +93,11 @@ int main( int argc, const char* argv[] )
         strncpy(temp_out2_name, swap_name, sizeof(swap_name));
         // now temp_out1 has the output file
     }
-    // Close and delete the non output file
+    // Close and delete the temporary file
     fclose(temp_out1);
     fclose(temp_out2);
     fclose(inputFile);
+    remove(temp_out2_name);
     // Rename the output file to user specified
     rename(temp_out1_name, output_file);
     
@@ -106,7 +107,7 @@ int main( int argc, const char* argv[] )
     long finish = _t.time * 1000 + _t.millitm;
     long _time = finish - start;
 
-    cout << "NUMBER OF RECORDS : " << numRecs << endl;
+    // cout << "NUMBER OF RECORDS : " << numRecs << endl;
     cout << "TIME : " << _time << " milliseconds" << endl;
 
     

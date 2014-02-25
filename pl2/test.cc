@@ -11,7 +11,7 @@ long _get_eof_offset(FILE* file) {
 
 int main( int argc, const char* argv[] ) {
 	char str[] = "EricZhu";
-	FILE *input = fopen("testinput.txt", "r");
+	FILE *input = fopen("temp.out1", "r");
 	FILE *output = fopen("testoutput.txt", "w");
 
 	long filesize = _get_eof_offset(input);
