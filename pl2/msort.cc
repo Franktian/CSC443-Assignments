@@ -43,21 +43,18 @@ int main( int argc, const char* argv[] )
         exit(1);
     }
 
-    FILE *outputFile = fopen(output_file, "w");
-    if (!outputFile) {
-        cout << "Error: Cannot open the output file!" << endl;
-        exit(1);
-    }
-
     // Determine how many records to be processed
     fseek(inputFile, 0, SEEK_END);
  	long numRecs = ftell(inputFile)/RECORD_LEN;
 	fseek(inputFile, 0, SEEK_SET);
     cout << "File to sort has " << numRecs << " records" << endl;
     
-    FILE *temp_out = fopen("temp.out1", "w");
-    if (!temp_out) {
-        cout << "Error: Cannot open the temp output file!" << endl;
+    char temp_out1_name[10] = "temp.out1";
+    char temp_out2_name[10] = "temp.out2";
+    FILE *temp_out1 = fopen(temp_out1_name, "w");
+    FILE *temp_out2 = fopen(temp_out2_name, "w");
+    if (!temp_out1 || !temp_out2) {
+        cout << "Error: Cannot open the output file!" << endl;
         exit(1);
     }
 
@@ -73,12 +70,12 @@ int main( int argc, const char* argv[] )
     cout << "Buffer size is " << buf_sz << " bytes"<< endl;
 
     // Make runs with each run having size run_length
-    int num_runs = mk_runs(inputFile, outputFile, run_length);
+    int num_runs = mk_runs(inputFile, temp_out1, run_length);
     cout << "Created " << num_runs << " runs each with size " << run_length << " bytes" << endl;
 
     // Merge Sort iterations
     while (num_runs > 1) {
-        num_runs = merge_runs(outputFile, temp_out, run_length, k, buf_sz);
+        num_runs = merge_runs(temp_out1, temp_out2, run_length, k, buf_sz);
         run_length = run_length * k;
         if (num_runs < 0) {
             cout << "Error: Something wrong in the merge_runs()!" << endl;
@@ -86,13 +83,25 @@ int main( int argc, const char* argv[] )
         }
         // now temp_out has the output file
         // swap temp file pointers
-        FILE* swap_temp = temp_out;
-        temp_out = outputFile;
-        outputFile = swap_temp;
-        // now outputFile has the output file
+        FILE* swap_temp = temp_out1;
+        temp_out1 = temp_out2;
+        temp_out2 = swap_temp;
+        // swap the names as well
+        char swap_name[10];
+        strncpy(swap_name, temp_out1_name, sizeof(swap_name));
+        strncpy(temp_out1_name, temp_out2_name, sizeof(temp_out1_name));
+        strncpy(temp_out2_name, swap_name, sizeof(swap_name));
+        //temp_out1_name = temp_out2_name;
+        //temp_out2_name = swap_name;
+        // now temp_out1 has the output file
     }
-    // The final output is always in the correct file (outputFile)
-
+    // Close and delete the non output file
+    fclose(temp_out1);
+    fclose(temp_out2);
+    fclose(inputFile);
+    // Rename the output file to user specified
+    rename(temp_out1_name, output_file);
+    
     // Stop the timer
     cout << "Stop the timer" << endl;
     ftime(&_t);
@@ -102,8 +111,7 @@ int main( int argc, const char* argv[] )
     cout << "NUMBER OF RECORDS : " << numRecs << endl;
     cout << "TIME : " << _time << " milliseconds" << endl;
 
-    fclose(inputFile);
-    fclose(outputFile);
-    fclose(temp_out);
+    
+    
   	return 0;
 }

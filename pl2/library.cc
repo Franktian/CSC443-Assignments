@@ -184,6 +184,9 @@ void _merge(FILE* in_fp, FILE* out_fp, Offset merge_start, Offset merge_size, Of
     
     Offset last_run_length = merge_size % run_length;
 
+    cout << "Merging " << num_runs << " runs, with total size " << merge_size << endl;
+    cout << "The last in this merge is size " << last_run_length << endl;
+
     int curr_run = 0;
     // iterate over complete runs to initialize the run iterators
     while (curr_run < num_runs - 1) {
@@ -258,14 +261,14 @@ int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size)
     int num_runs = _ceil(file_size, run_length);
     cout << "Current number of runs: " << num_runs << ", size: " << run_length << " bytes" << endl;
     int num_merges = _ceil(num_runs, k);
-    int last_merge_num_runs = num_runs % num_merges;
+    int last_merge_num_runs = num_runs % k;
 
     int curr_merge = 0;
     int file_pos = 0;
     // The complete k-way merges
     while (curr_merge < num_merges - 1) {
         _merge(in_fp, out_fp, file_pos, run_length*k, file_pos, run_length, k, buf_size);
-        cout << "Merging " << k << " runs of size " << run_length << endl;
+        // cout << "Merging " << k << " runs of total size " << run_length*k << endl;
         file_pos += run_length*k;
         curr_merge ++;
     }
@@ -273,10 +276,10 @@ int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size)
     Offset merge_size = file_size - file_pos;
     if (last_merge_num_runs > 0) {
         _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, last_merge_num_runs, buf_size);
-        cout << "Merging " << last_merge_num_runs << " runs of max size " << run_length << endl;
+        // cout << "Merging " << last_merge_num_runs << " runs of total size " << merge_size << endl;
     } else {
         _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, k, buf_size);
-        cout << "Merging " << k << " runs of max size " << run_length << endl;
+        // cout << "Merging " << k << " runs of total size " << merge_size << endl;
     }
     return num_merges;
 }
