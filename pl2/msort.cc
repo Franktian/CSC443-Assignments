@@ -50,11 +50,11 @@ int main( int argc, const char* argv[] )
     }
 
     // Determine how many records to be processed
-    fseek(inputFile, 0L, SEEK_END);
+    fseek(inputFile, 0, SEEK_END);
  	long numRecs = ftell(inputFile)/RECORD_LEN;
-	fseek(inputFile, 0L, SEEK_SET);
-    cout << "File to sort has " << numRecs << " records";
-
+	fseek(inputFile, 0, SEEK_SET);
+    cout << "File to sort has " << numRecs << " records" << endl;
+    
     FILE *temp_out = fopen("temp.out1", "w");
     if (!temp_out) {
         cout << "Error: Cannot open the temp output file!" << endl;
@@ -70,12 +70,16 @@ int main( int argc, const char* argv[] )
     // Lets let run length based on the buf_sz
     int run_length = buf_sz;
 
+    cout << "Buffer size is " << buf_sz << " bytes"<< endl;
+
     // Make runs with each run having size run_length
     int num_runs = mk_runs(inputFile, outputFile, run_length);
+    cout << "Created " << num_runs << " runs each with size " << run_length << " bytes" << endl;
 
     // Merge Sort iterations
     while (num_runs > 1) {
         num_runs = merge_runs(outputFile, temp_out, run_length, k, buf_sz);
+        run_length = run_length * k;
         if (num_runs < 0) {
             cout << "Error: Something wrong in the merge_runs()!" << endl;
             exit(1);

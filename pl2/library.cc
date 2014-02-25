@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <iostream>
+
+using namespace std;
 
 /** 
  * Read a chunk from a file, at the position given by offset
@@ -236,6 +239,15 @@ void _merge(FILE* in_fp, FILE* out_fp, Offset merge_start, Offset merge_size, Of
     delete[] top_buf;
 }
 
+long _ceil(long divided, long divisor) {
+    long ans = divided / divisor;
+    long rmd = divided % divisor;
+    return rmd > 0 ? ans + 1 : ans;
+}
+
+/**
+ * Merge runs with given run length
+ */
 int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size) {
     // First check if the length of the run is a multiple of 9
     assert(run_length % RECORD_LEN == 0);
@@ -243,26 +255,28 @@ int merge_runs(FILE* in_fp, FILE *out_fp, long run_length, int k, long buf_size)
 
     Offset file_size = _get_eof_offset(in_fp);
 
-    int num_runs = ceil(file_size / run_length);
-    int num_merges = ceil(num_runs / k);
+    int num_runs = _ceil(file_size, run_length);
+    cout << "Current number of runs: " << num_runs << ", size: " << run_length << " bytes" << endl;
+    int num_merges = _ceil(num_runs, k);
     int last_merge_num_runs = num_runs % num_merges;
 
     int curr_merge = 0;
     int file_pos = 0;
-    int num_runs_remain = 0;
     // The complete k-way merges
     while (curr_merge < num_merges - 1) {
         _merge(in_fp, out_fp, file_pos, run_length*k, file_pos, run_length, k, buf_size);
+        cout << "Merging " << k << " runs of size " << run_length << endl;
         file_pos += run_length*k;
-        num_runs_remain ++;
+        curr_merge ++;
     }
     // The last merge run may not always be k-way
     Offset merge_size = file_size - file_pos;
     if (last_merge_num_runs > 0) {
         _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, last_merge_num_runs, buf_size);
+        cout << "Merging " << last_merge_num_runs << " runs of max size " << run_length << endl;
     } else {
         _merge(in_fp, out_fp, file_pos, merge_size, file_pos, run_length, k, buf_size);
+        cout << "Merging " << k << " runs of max size " << run_length << endl;
     }
-    num_runs_remain ++;
-    return num_runs_remain;
+    return num_merges;
 }
