@@ -16,3 +16,6 @@ bsort: bsort.cc
 
 clean:
 	rm -rf *.o leveldb_dir
+
+test: test.cc
+	$(CC) -o test test.cc

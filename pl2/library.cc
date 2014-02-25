@@ -175,7 +175,8 @@ void _merge(FILE* in_fp, FILE* out_fp, Offset merge_start, Offset merge_size, Of
     // initialize top buff
     for (int i = 0; i < num_runs; ++i)
     {
-        top_buf[i] = iterators[i]->next();
+        // Copy the content instead of assigning pointer
+        memcpy(top_buf[i], iterators[i]->next(), RECORD_LEN);
     }
 
     long curr_records_in_buf = 0;
