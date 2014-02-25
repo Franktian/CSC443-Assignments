@@ -15,9 +15,19 @@ void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length);
 
 class RunIterator {
 public:
-    int curr_pos;
-    int run_length;
+    long read_start;
+    long read_end;
+    long read_curr;
+    long read_length;
+
+    long buf_start;
+    long buf_end;
+    long buf_curr;
+    long buf_length;
     char *buf;
+    char *record;
+
+    FILE *fp;
     /**
      * creates an iterator using the `buf_size` to
      * scan through a run that starts at `start_pos`
@@ -30,8 +40,6 @@ public:
      * iterator reads the end of the run.
      */
     Record next();
-
-    bool hasNext();
 };
 
 /**

@@ -83,30 +83,54 @@ void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
 
 
 RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_size) {
-    this->curr_pos = 0;
-    this->run_length = run_length;
-    this->buf = (char *)malloc(buf_size * RECORD_LEN);
-    fseek(fp, start_pos, SEEK_SET);
-    fread(this->buf, RECORD_LEN, buf_size, fp);
+    
+    this->read_start = start_pos;
+    this->read_end = start_pos + run_length;
+    this->read_curr = this->read_start;
+    this->read_length = run_length;
+
+    this->buf = new char[buf_size];
+    this->record = new char[RECORD_LEN];
+
+    this->buf_start = 0;
+    this->buf_end = buf_size;
+    this->buf_curr = 0;
+    this->buf_length = buf_size;
+
+    if (buf_length >= run_length) {
+        this->buf_end = run_length;
+    }
+
+    this->fp = fp;
+
+
+    fseek(this->fp, this->read_curr, SEEK_SET);
+    fread(this->buf, RECORD_LEN, this->buf_length, this->fp);  // read a buffer of records
 }
 
 RunIterator::~RunIterator() {
-    delete this->buf;
+    delete[] this->buf;
 }
 
 Record RunIterator::next() {
-    if (!this->hasNext()) {
-        return NULL;
+
+    if (this->buf_curr >= this->buf_end) {
+        if (read_curr < read_end) {
+            fseek(fp, this->read_curr, SEEK_SET);
+            fread(this->buf, RECORD_LEN, this->buf_length, this->fp);
+            this->buf_curr = 0;
+            if (this->buf_length >= this->read_end - this->read_curr) {
+                this->buf_end = this->read_end - this->read_curr;
+            }
+        } else {
+            return NULL;
+        }
     }
 
-    Record record = (Record)malloc(RECORD_LEN);
-    memcpy(record, (Record)this->buf[this->curr_pos], RECORD_LEN);
-    this->curr_pos += RECORD_LEN;
-    return record;
-}
-
-bool RunIterator::hasNext() {
-    return this->curr_pos < this->run_length;
+    memcpy(this->record, (char *)(this->buf + this->buf_curr), RECORD_LEN);
+    this->buf_curr += RECORD_LEN;
+    this->read_curr += RECORD_LEN;
+    return this->record;
 }
 
 ///////////////Frank//////////////
