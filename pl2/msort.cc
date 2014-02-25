@@ -91,8 +91,6 @@ int main( int argc, const char* argv[] )
         strncpy(swap_name, temp_out1_name, sizeof(swap_name));
         strncpy(temp_out1_name, temp_out2_name, sizeof(temp_out1_name));
         strncpy(temp_out2_name, swap_name, sizeof(swap_name));
-        //temp_out1_name = temp_out2_name;
-        //temp_out2_name = swap_name;
         // now temp_out1 has the output file
     }
     // Close and delete the non output file

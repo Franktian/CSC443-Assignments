@@ -13,7 +13,10 @@ using namespace std;
 Offset _read_chunk_from_file(char* chunk, Offset start,
                             Offset chunk_size, FILE *file_ptr) {
     fseek(file_ptr, start, SEEK_SET);
-    return fread(chunk, 1, chunk_size, file_ptr);
+    // cout << "CHUNK SIZE " << chunk_size << endl;
+    int y = fread(chunk, 1, chunk_size, file_ptr);
+    // cout << y << endl;
+    return y;
 }
 
 /** 
@@ -89,6 +92,8 @@ int mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
 
 RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_size) {
     
+    // cout << "Creating run iterator at file position " << start_pos << endl;
+
     this->read_start = start_pos;
     this->read_end = start_pos + run_length;
     this->read_curr = this->read_start;
@@ -102,34 +107,36 @@ RunIterator::RunIterator(FILE *fp, long start_pos, long run_length, long buf_siz
     this->buf_curr = 0;
     this->buf_length = buf_size;
 
-    if (buf_length >= run_length) {
-        this->buf_end = run_length;
-    }
-
     this->fp = fp;
 
-    _read_chunk_from_file(buf, read_curr, buf_size, fp);
+    this->buf_end = buf_length >= run_length ? run_length : buf_length;
+    _read_chunk_from_file(buf, read_curr, buf_end - buf_start, fp);
 }
 
 RunIterator::~RunIterator() {
     delete[] this->buf;
+    delete[] this->record;
 }
 
 Record RunIterator::next() {
 
     if (this->buf_curr >= this->buf_end) {
         if (read_curr < read_end) {
-            _read_chunk_from_file(buf, read_curr, buf_length, fp);
             this->buf_curr = 0;
             if (this->buf_length >= this->read_end - this->read_curr) {
                 this->buf_end = this->read_end - this->read_curr;
+                _read_chunk_from_file(buf, read_curr, this->buf_end, fp);
+                // cout << buf << endl;
+            } else {
+                _read_chunk_from_file(buf, read_curr, this->buf_length, fp);
+                // cout << buf << endl;
             }
         } else {
             return NULL;
         }
     }
-
     memcpy(this->record, (char *)(this->buf + this->buf_curr), RECORD_LEN);
+    // cout << "Record: " << (char*)this->record << endl;
     this->buf_curr += RECORD_LEN;
     this->read_curr += RECORD_LEN;
     return this->record;
@@ -185,7 +192,7 @@ void _merge(FILE* in_fp, FILE* out_fp, Offset merge_start, Offset merge_size, Of
     Offset last_run_length = merge_size % run_length;
 
     cout << "Merging " << num_runs << " runs, with total size " << merge_size << endl;
-    cout << "The last in this merge is size " << last_run_length << endl;
+    // cout << "The last in this merge is size " << last_run_length << endl;
 
     int curr_run = 0;
     // iterate over complete runs to initialize the run iterators
