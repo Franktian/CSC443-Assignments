@@ -11,7 +11,7 @@ typedef long Offset;
  * the `out_fp`.
  * The length of the run must be a multiple of 9
  */
-void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length);
+int mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length);
 
 class RunIterator {
 public:

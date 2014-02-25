@@ -42,7 +42,7 @@ int _record_compare(void const *r1, void const *r2) {
  * creates runs of length `run_length` in
  * the `out_fp`.
  */
-void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
+int mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
     // First check if the length of the run is a multiple of 9
     assert(run_length % RECORD_LEN == 0);
 
@@ -77,6 +77,8 @@ void mk_runs(FILE *in_fp, FILE *out_fp, Offset run_length) {
 
     // Finish and free memory
     delete[] run_buf;
+
+    return last_run_length > 0 ? num_run : num_run - 1;
 }
 
 ///////////////Frank//////////////

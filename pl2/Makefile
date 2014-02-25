@@ -8,14 +8,16 @@ all: library.o msort bsort
 library.o: library.cc library.h
 	$(CC) -o $@ $(CCFLAGS)  -c $<
 
-msort: msort.cc library.o
-	$(CC) -o $@ $(CCFLAGS)  -c $<
+msort:
+	$(CC) -o msort msort.cc library.o $<
 
 bsort: bsort.cc
 	$(CC) -o bsort bsort.cc $(OPTS)
 
 clean:
-	rm -rf *.o leveldb_dir
+	rm -rf *.o leveldb_dir msort bsort
 
 test: test.cc
 	$(CC) -o test test.cc
+
+

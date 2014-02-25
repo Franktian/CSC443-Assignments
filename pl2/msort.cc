@@ -22,8 +22,8 @@ int main( int argc, const char* argv[] )
 
     char* input_file = (char*)argv[1];
     char* output_file = (char*)argv[2];
-    int mem_capacity = atoi((argv[3]));
-    int k = atoi((argv[4]));
+    long mem_capacity = atoi((argv[3]));
+    long k = atoi((argv[4]));
 
     // Check if the mem_capacity is large enough
     if (RECORD_LEN > mem_capacity/k) {
@@ -43,7 +43,7 @@ int main( int argc, const char* argv[] )
         exit(1);
     }
 
-    FILE *outputFile = fopen(output_file, "w+");
+    FILE *outputFile = fopen(output_file, "w");
     if (!outputFile) {
         cout << "Error: Cannot open the output file!" << endl;
         exit(1);
@@ -51,42 +51,43 @@ int main( int argc, const char* argv[] )
 
     // Determine how many records to be processed
     fseek(inputFile, 0L, SEEK_END);
- 	  int numRecs = ftell(inputFile)/RECORD_LEN;
-	  fseek(inputFile, 0L, SEEK_SET);
+ 	long numRecs = ftell(inputFile)/RECORD_LEN;
+	fseek(inputFile, 0L, SEEK_SET);
+    cout << "File to sort has " << numRecs << " records";
 
-    FILE *temp_out = fopen("temp.out", "w");
+    FILE *temp_out = fopen("temp.out1", "w");
     if (!temp_out) {
         cout << "Error: Cannot open the temp output file!" << endl;
         exit(1);
     }
 
-    int run_length = 0;
-    // Produce ceil(mem_capacity/(k+1)) numbers of sorted segments
-    mk_runs(inputFile, temp_out, floor(mem_capacity/(k+1)));
+    // Determine the buffer size and make sure it is multiple of the length of record
+    long buf_sz = floor(mem_capacity/(k+1));
+    long adjustment = buf_sz % RECORD_LEN;
+    if (adjustment > 0)
+        buf_sz -= adjustment;
 
-    // Determine the buffer size and make sure it is multiple of 9
-    int buf_sz = 0;
-    int adjustment = (int)(floor(mem_capacity/(k+1))) % RECORD_LEN;
-    if (adjustment)
-        buf_sz = floor(mem_capacity/(k+1)) - adjustment;
-    else
-        buf_sz = floor(mem_capacity/(k+1));
+    // Lets let run length based on the buf_sz
+    int run_length = buf_sz;
+
+    // Make runs with each run having size run_length
+    int num_runs = mk_runs(inputFile, outputFile, run_length);
 
     // Merge Sort iterations
-    int ways = merge_runs(temp_out, outputFile, run_length, k, buf_sz);
-    if (ways < 0) {
-        cout << "Error: Something wrong in the merge_runs()!" << endl;
-        exit(1);
-    }
-
-    while (ways > 1) {
-        run_length *= k;
-        ways = merge_runs(temp_out, outputFile, run_length, k, buf_sz);
-        if (ways < 0) {
-            cout << "Error: Something wrong in the merge_runs()! --- " << ways << endl;
+    while (num_runs > 1) {
+        num_runs = merge_runs(outputFile, temp_out, run_length, k, buf_sz);
+        if (num_runs < 0) {
+            cout << "Error: Something wrong in the merge_runs()!" << endl;
             exit(1);
         }
+        // now temp_out has the output file
+        // swap temp file pointers
+        FILE* swap_temp = temp_out;
+        temp_out = outputFile;
+        outputFile = swap_temp;
+        // now outputFile has the output file
     }
+    // The final output is always in the correct file (outputFile)
 
     // Stop the timer
     cout << "Stop the timer" << endl;
