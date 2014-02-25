@@ -12,9 +12,6 @@
 
 using namespace std;
 
-#define RECORD_SIZE 9
-
-
 int main( int argc, const char* argv[] )
 {
     if (argc != 5) {
@@ -29,7 +26,7 @@ int main( int argc, const char* argv[] )
     int k = atoi((argv[4]));
 
     // Check if the mem_capacity is large enough
-    if (RECORD_SIZE > mem_capacity/k) {
+    if (RECORD_LEN > mem_capacity/k) {
         cout << "mem_capacity is too small!" << endl;
         exit(1);
     }
@@ -54,7 +51,7 @@ int main( int argc, const char* argv[] )
 
     // Determine how many records to be processed
     fseek(inputFile, 0L, SEEK_END);
- 	  int numRecs = ftell(inputFile)/RECORD_SIZE;
+ 	  int numRecs = ftell(inputFile)/RECORD_LEN;
 	  fseek(inputFile, 0L, SEEK_SET);
 
     FILE *temp_out = fopen("temp.out", "w");
@@ -69,7 +66,7 @@ int main( int argc, const char* argv[] )
 
     // Determine the buffer size and make sure it is multiple of 9
     int buf_sz = 0;
-    int adjustment = (int)(floor(mem_capacity/(k+1))) % 9;
+    int adjustment = (int)(floor(mem_capacity/(k+1))) % RECORD_LEN;
     if (adjustment)
         buf_sz = floor(mem_capacity/(k+1)) - adjustment;
     else
