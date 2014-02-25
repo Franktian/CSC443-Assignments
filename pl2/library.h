@@ -1,8 +1,8 @@
 #include <cstdio>
 
-#define RECORD_LEN 9
+#define RECORD_LEN 8
 
-typedef char* Record; // length is 9
+typedef char* Record; // length is 8, as we don't read in null terminator
 
 typedef long Offset;
 
