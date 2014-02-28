@@ -9,8 +9,8 @@
 
 #include "leveldb/db.h"
 
-#define DEBUG_TERM 1
-#define DEBUG_FILE 1
+#define DEBUG_TERM 0
+#define DEBUG_FILE 0
 
 using namespace std;
 
