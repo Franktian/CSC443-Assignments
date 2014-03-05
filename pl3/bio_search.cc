@@ -11,12 +11,12 @@ void replace(string& str, const string& from, const string& to) {
     size_t start_pos = 0;
     size_t to_length = to.length();
     while((start_pos = str.find(from, start_pos)) != string::npos) {
-
     	// Check to make sure the term is not a part of another word
-		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
+		if (start_pos+to_length < str.length() && 
+			str.at(start_pos+to_length+1) != ' ') {
 			continue;
 		}
-		if (start_pos+to_length != string::npos && str.at(start_pos+to_length+1) != ' ') {
+		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
 			continue;
 		}
         str.replace(start_pos, from.length(), to);
@@ -48,13 +48,24 @@ int main(int argc, char **argv) {
 	    // Open the database
 	    Xapian::Database db(index_name);
 	    
-	    // Construct the query terms
+	    // Construct the query terms and query string
 	    vector<string> query_terms;
+	    string query_string;
 	    for (int i = 3; i < argc; ++i) {
-	    	query_terms.push_back(argv[i]);
+	    	char* term = argv[i];
+	    	if (term[0] == '+') {
+	    		query_terms.push_back(term+1);
+	    	} else {
+	    		query_terms.push_back(term);
+	    	}
+	    	query_string.append(term).append(" ");
 	    }
+
+	    Xapian::QueryParser parser;
+	    Xapian::Query query = parser.parse_query(query_string);
+
 	    // Pass in operator and vector iterators
-		Xapian::Query query(Xapian::Query::OP_OR, query_terms.begin(), query_terms.end());
+		// Xapian::Query query(Xapian::Query::OP_OR, query_terms.begin(), query_terms.end());
 		cout << "Performing query `" << query.get_description() << "`" << endl;
 
 		// Run the query
