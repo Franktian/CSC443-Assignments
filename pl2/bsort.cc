@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]) {
 		exit(1);
 	}
 
-	char* inputFile = (char*)argv[1];
+	char* inputFile  m(char*)argv[1];
 	char* outIndex = (char*)argv[2];
 	int numRecs = 0;
 
