@@ -13,15 +13,15 @@ using namespace std;
 int main(int argc, char **argv) {
 
 
-    /*if (argc != 3) {
+    if (argc != 3) {
 		cout << "ERROR: invalid input parameters!" << endl;
 		cout << "Usage: <parsed_biographies> <index_name>" << endl;
 		exit(1);
-	}*/
+	}
 
 	ifstream file;
 
-	file.open("parsefrank");
+	file.open(argv[1]);
 
 	if (!file) {
 		cout << "Read file failed" << endl;
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
 	string line;
 
-	char dbname[] = "indexer";
+	char *dbname = argv[2];
 
 
 
