@@ -10,17 +10,20 @@ void replace(string& str, const string& from, const string& to) {
     if(from.empty()) { return; }
     size_t start_pos = 0;
     size_t to_length = to.length();
+	size_t from_length = from.length();
     while((start_pos = str.find(from, start_pos)) != string::npos) {
     	// Check to make sure the term is not a part of another word
-		if (start_pos+to_length < str.length() && 
-			str.at(start_pos+to_length+1) != ' ') {
+		if (start_pos+from_length < str.length() && 
+			str.at(start_pos+from_length) != ' ') {
+			start_pos += from_length;
 			continue;
 		}
 		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
+			start_pos += from_length;
 			continue;
 		}
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length();
+        str.replace(start_pos, from_length, to);
+        start_pos += to_length;
     }
 }
 
@@ -96,6 +99,7 @@ int main(int argc, char **argv) {
 
 			// Get the original document and highlight the search terms
 			string data = doc.get_data();
+			//cout << data << endl;
 			for (int j = 0; j < num_search_terms; j++) {
 				replace(data, query_terms.at(j), highlighted_terms.at(j));
 			}
