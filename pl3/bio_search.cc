@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <string>
 #include <sys/timeb.h>
+#include <cctype>
+#include <cstdio>
 
 using namespace std;
 
@@ -56,6 +58,12 @@ int main(int argc, char **argv) {
 	    string query_string;
 	    for (int i = 3; i < argc; ++i) {
 	    	char* term = argv[i];
+		// transform the search terms to lower case
+		char c; int j = 0;
+		while (term[j]) {
+			term[j] = tolower(term[j]);
+			j++;
+		}
 	    	if (term[0] == '+') {
 	    		query_terms.push_back(term+1);
 	    	} else {
