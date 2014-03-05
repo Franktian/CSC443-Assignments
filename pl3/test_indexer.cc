@@ -35,31 +35,6 @@ int main(int argc, char **argv) {
 		db.add_document(doc);
 
 		db.commit();
-
-		Xapian::Database qdb(dbname);
-		std::vector<string> terms;
-		terms.push_back("people");
-		terms.push_back("stone");
-
-		// Pass in operator and vector iterators
-		Xapian::Query query(Xapian::Query::OP_OR, terms.begin(), terms.end());
-		cout << "Performing query `" << query.get_description() << "`" << endl;
-
-		//Start query
-		Xapian::Enquire enquire(db);
-		enquire.set_query(query);
-
-		Xapian::MSet matches = enquire.get_mset(0, 10);
-		cout << "mset size is " << matches.size() << endl;
-
-		Xapian::MSetIterator i;
-		for (i = matches.begin(); i != matches.end(); ++i) {
-			cout << "Document ID " << *i << "\t";
-			cout << i.get_percent() << "% ";
-			Xapian::Document doc = i.get_document();
-			cout << "[" << doc.get_data() << "]" << endl;
-		}
-
 	} catch (const Xapian::Error & error) {
 		cout << "Exception: " << error.get_msg() << endl;
 	}
