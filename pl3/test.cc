@@ -15,6 +15,10 @@ int main(int argc, char **argv) {
 		doc.add_value(0, string("hello"));
 		doc.add_value(1, string("world"));
 		db.add_document(doc);
+
+		// Do commit in batch
+		db.commit();
+
 	} catch (const Xapian::Error & error) {
 		cout << "Exception: " << error.get_msg() << endl;
 	}
