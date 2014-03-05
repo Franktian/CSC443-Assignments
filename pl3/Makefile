@@ -13,4 +13,4 @@ bio_search: bio_search.cc
 	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
 
 clean:
-	rm -rf *.o test_indexer bio_search bio_indexer ...
+	rm -rf *.o test_indexer bio_search bio_indexer ... indexer
