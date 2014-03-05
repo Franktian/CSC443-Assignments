@@ -8,4 +8,4 @@ test: test.cc
 	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
 
 clean:
-	rm -rf *.o test
+	rm -rf *.o test ...
