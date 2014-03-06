@@ -57,7 +57,6 @@ int main(int argc, char **argv) {
 			// cast name to a string
 			string person_name(name, line.size() + 1);
 
-
 			// The line following it is the biography, load it
 
 			getline(file, line);
