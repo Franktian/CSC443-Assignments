@@ -32,11 +32,8 @@ int main(int argc, char **argv) {
 
 	char *dbname = argv[2];
 
-	//int *gram_size = (int *)argv[3];
+	//this indicate what gram you wouldl like to get
 	int size = atoi(argv[3]);
-
-
-
 
 	try {
 		Xapian::WritableDatabase db(dbname, Xapian::DB_CREATE_OR_OPEN);
@@ -48,8 +45,6 @@ int main(int argc, char **argv) {
 	    long total = 0;
 	    ftime(&_t);
 	    long start = _t.time * 1000 + _t.millitm;
-	    
-
 
 		while (getline(file, line)) {
 			// First line must be a person's name, copy it
@@ -64,44 +59,16 @@ int main(int argc, char **argv) {
 
 			getline(file, line);
 
-
-
-			//istringstream iss(line);
-
 			// Tokenize the biography in to n gram
 			// the line variable is a string need to be tokenized into ngram
-
-			/*vector<string> tokens;
-			copy(istream_iterator<string>(iss),
-	         istream_iterator<string>(),
-	         back_inserter<vector<string> >(tokens));*/
-
-
-
 			// This is the tokenized n-gram
-			vector<string> ngram;
-			string sub;
-			// do a 3 gram first
-			
+
+			string sub;			
 			for (int i = 0; i < line.length() - size + 1; i++) {
-				//string sub;
-				//cout << 'size: ' << *gram_size << endl;
 				sub = line.substr(i, size);
-				//cout << "i: " << i << endl;
 				//cout << sub << endl;
 				doc.add_term(sub);
-				//ngram.push_back(sub);
 			}
-
-
-			// Add terms to this person
-			/*for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
-				if (find(terms.begin(), terms.end(), *it) == terms.end()) {
-					// If we do not have that term, we insert it
-					doc.add_term(*it);
-					terms.push_back(*it);
-				}
-			}*/
 
 			// Set value and data
 			doc.add_value(0, person_name);
