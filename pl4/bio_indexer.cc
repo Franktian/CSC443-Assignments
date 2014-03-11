@@ -13,9 +13,9 @@ using namespace std;
 int main(int argc, char **argv) {
 
 
-    if (argc != 3) {
+    if (argc != 4) {
 		cout << "ERROR: invalid input parameters!" << endl;
-		cout << "Usage: <parsed_biographies> <index_name>" << endl;
+		cout << "Usage: <parsed_biographies> <index_name> <n>" << endl;
 		exit(1);
 	}
 
@@ -31,6 +31,9 @@ int main(int argc, char **argv) {
 	string line;
 
 	char *dbname = argv[2];
+
+	//int *gram_size = (int *)argv[3];
+	int size = atoi(argv[3]);
 
 
 
@@ -63,37 +66,47 @@ int main(int argc, char **argv) {
 
 
 
-			istringstream iss(line);
+			//istringstream iss(line);
 
-			// Tokenize the biography
+			// Tokenize the biography in to n gram
+			// the line variable is a string need to be tokenized into ngram
 
-			vector<string> tokens;
+			/*vector<string> tokens;
 			copy(istream_iterator<string>(iss),
 	         istream_iterator<string>(),
-	         back_inserter<vector<string> >(tokens));
+	         back_inserter<vector<string> >(tokens));*/
 
 
 
-			// This is to check if term already exists
-			vector<string> terms;
+			// This is the tokenized n-gram
+			vector<string> ngram;
+			string sub;
+			// do a 3 gram first
+			
+			for (int i = 0; i < line.length() - size + 1; i++) {
+				//string sub;
+				//cout << 'size: ' << *gram_size << endl;
+				sub = line.substr(i, size);
+				//cout << "i: " << i << endl;
+				//cout << sub << endl;
+				doc.add_term(sub);
+				//ngram.push_back(sub);
+			}
 
 
 			// Add terms to this person
-			for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
+			/*for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
 				if (find(terms.begin(), terms.end(), *it) == terms.end()) {
 					// If we do not have that term, we insert it
 					doc.add_term(*it);
 					terms.push_back(*it);
 				}
-			}
+			}*/
 
 			// Set value and data
 			doc.add_value(0, person_name);
 			doc.set_data(line);
 			db.add_document(doc);
-			
-
-			
 
 			// Clear the document ready for the next
 			doc.clear_terms();
