@@ -11,6 +11,7 @@ bio_indexer: bio_indexer.cc
 
 bio_search: bio_search.cc
 	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
-
+library: library.cc
+	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
 clean:
-	rm -rf *.o test_indexer bio_search bio_indexer ... indexer
+	rm -rf *.o test_indexer bio_search bio_indexer ... indexer library

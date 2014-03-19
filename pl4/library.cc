@@ -7,8 +7,27 @@
 #include <string>
 #include <iterator>
 #include <sys/timeb.h>
+#include "library.h"
 
-using namespace std;
+
+/**
+ * Tokenizer for a string contains white spaces
+ */
+vector<string> tokenizer (string to_be_tokenized, int n) {
+	// Note that the input string is a string separate by white spaces
+	vector<string> result;
+	// First tokenized the string by white space
+	vector<string> tokens = space_tokenizer(to_be_tokenized);
+	for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
+		// For each word in the string, get the n-gram
+		vector<string> single = ngram_tokenizer(*it, n);
+		for (vector<string>::iterator it2 = single.begin(); it2 != single.end(); ++it2) {
+			result.push_back(*it2);
+		}
+		//cout << "****" << endl;
+	}
+	return result;
+}
 
 /**
  * Tokenizer for a singe string with no space
@@ -41,7 +60,10 @@ vector<string> space_tokenizer (string to_be_tokenized) {
 }
 
 int main(int argc, char **argv) {
-	string frank = "a b c d e";
+	string frank = "microsoft frank";
 	vector<string> token = space_tokenizer(frank);
-	ngram_tokenizer("ab", 3);
+	vector<string> result = tokenizer(frank, 3);
+	for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
+		cout << *it << endl;
+	}
 }
