@@ -13,27 +13,13 @@
  * Get rid of the symbols of a given string
  */
 string encrpytion (string to_be_encrpyted) {
-	string str = "frank, is,\" what? jame & holy$$ fuck` what ~ happend + shit _ +";
 	char chars[] = ",.<>/?;:'\"[]{}\\|-_=+()*&^\%$#@!`~";
 	for (int i = 0; i < strlen(chars); ++i) {
-		str.erase (std::remove(str.begin(), str.end(), chars[i]), str.end());
+		to_be_encrpyted.erase (std::remove(to_be_encrpyted.begin(), to_be_encrpyted.end(), chars[i]), to_be_encrpyted.end());
 	}
-	return str;
+	return to_be_encrpyted;
 }
-/*
-   string str("(555) 555-5555");
 
-   char chars[] = "()-";
-
-   for (unsigned int i = 0; i < strlen(chars); ++i)
-   {
-      // you need include <algorithm> to use general algorithms like std::remove()
-      str.erase (std::remove(str.begin(), str.end(), chars[i]), str.end());
-   }
-
-   // output: 555 5555555
-   cout << str << endl;
-  */
 /**
  * Tokenizer for a string contains white spaces
  */
@@ -90,6 +76,6 @@ int main(int argc, char **argv) {
 	/*for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
 		cout << *it << endl;
 	}*/
-	string test = "frank, is: what?";
-	encrpytion(test);
+	string test = "frank, is,\" what? jame & holy$$ fuck` what ~ happend + shit _ +";
+	cout << encrpytion(test) << endl;
 }
