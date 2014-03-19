@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 		enquire.set_query(query);
 
 		// Search
-		Xapian::MSet matches = enquire.get_mset(0, k);
+		Xapian::MSet matches = enquire.get_mset(0, k, 0, 0, &jaccardMatchDecider);
 		cout << "Result mset size is " << matches.size() << endl;
 
 		// Prepare the highlighted search terms
