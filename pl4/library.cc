@@ -9,7 +9,32 @@
 #include <sys/timeb.h>
 #include "library.h"
 
+/**
+ * Get rid of the symbols of a given string
+ */
+string encrpytion (string to_be_encrpyted) {
+	string str = "frank, is,\" what? jame & holy$$ fuck` what ~ happend + shit _ +";
+	char chars[] = ",.<>/?;:'\"[]{}\\|-_=+()*&^\%$#@!`~";
+	for (int i = 0; i < strlen(chars); ++i) {
+		str.erase (std::remove(str.begin(), str.end(), chars[i]), str.end());
+	}
+	cout << str << endl;
+	return str;
+}
+/*
+   string str("(555) 555-5555");
 
+   char chars[] = "()-";
+
+   for (unsigned int i = 0; i < strlen(chars); ++i)
+   {
+      // you need include <algorithm> to use general algorithms like std::remove()
+      str.erase (std::remove(str.begin(), str.end(), chars[i]), str.end());
+   }
+
+   // output: 555 5555555
+   cout << str << endl;
+  */
 /**
  * Tokenizer for a string contains white spaces
  */
@@ -63,7 +88,9 @@ int main(int argc, char **argv) {
 	string frank = "microsoft frank";
 	vector<string> token = space_tokenizer(frank);
 	vector<string> result = tokenizer(frank, 3);
-	for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
+	/*for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
 		cout << *it << endl;
-	}
+	}*/
+	string test = "frank, is: what?";
+	encrpytion(test);
 }
