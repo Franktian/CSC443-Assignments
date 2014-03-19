@@ -78,10 +78,7 @@ int main(int argc, char **argv) {
     ftime(&_t);
     long start = _t.time * 1000 + _t.millitm;
     
-    try {
-	    // Open the database
-	    Xapian::Database db(index_name);
-	    
+    try {	    
 	    // Construct the query terms and query string
 	    vector<string> query_terms;
 	    string query_string;
@@ -93,12 +90,24 @@ int main(int argc, char **argv) {
 				term[j] = tolower(term[j]);
 				j++;
 			}
+			vector<string> ngrams;
 	    	if (term[0] == '+') {
 	    		query_terms.push_back(term+1);
+	    		// Ngramize the term and add them to query string
+	    		string term_str(term+1);
+	    		ngrams = ngram_tokenizer(term_str, 3);
 	    	} else {
 	    		query_terms.push_back(term);
+	    		string term_str(term);
+	    		ngrams = ngram_tokenizer(term_str, 3);
 	    	}
-	    	query_string.append(term).append(" ");
+	    	for (vector<string>::iterator it = ngrams.begin(); it != ngrams.end(); ++it) {
+				if (term[0] == '+') {
+					query_string.append("+").append(*it).append(" ");
+				} else {
+					query_string.append(*it).append(" ");
+				}
+			}
 	    }
 
 	    Xapian::QueryParser parser;
@@ -117,6 +126,9 @@ int main(int argc, char **argv) {
 				jaccardMatchDecider.add_term(*it);
 			}
 		}
+
+		// Open the database
+	    Xapian::Database db(index_name);
 
 		// Run the query
 		Xapian::Enquire enquire(db);

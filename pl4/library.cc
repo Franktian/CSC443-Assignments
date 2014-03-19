@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <iterator>
 #include <sys/timeb.h>
 #include <set>
