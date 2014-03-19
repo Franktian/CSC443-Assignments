@@ -18,7 +18,6 @@ string encrpytion (string to_be_encrpyted) {
 	for (int i = 0; i < strlen(chars); ++i) {
 		str.erase (std::remove(str.begin(), str.end(), chars[i]), str.end());
 	}
-	cout << str << endl;
 	return str;
 }
 /*
