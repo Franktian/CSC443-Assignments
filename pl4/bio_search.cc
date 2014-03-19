@@ -2,11 +2,40 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <set>
 #include <sys/timeb.h>
 #include <cctype>
 #include <cstdio>
 
 using namespace std;
+
+class JaccardMatchDecider : public Xapian::MatchDecider {
+
+	std::set<string> query_terms;
+	double similarity_threshold;
+
+	public:
+		JaccardMatchDecider(double similarity_threshold) {
+			this->similarity_threshold = similarity_threshold;
+		}
+		void add_term(const string& value);
+		bool operator()(const Xapian::Document& doc) const;
+		~JaccardMatchDecider() { delete query_terms; }
+};
+
+void JaccardMatchDecider::add_term(const string& value) {
+	query_terms.insert(value);
+}
+
+bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
+	Xapian::TermIterator i;
+	std:set<string> doc_terms;
+	for (i = doc.termlist_begin(); i != doc.termlist_end(); ++i)
+	{
+		doc_terms.insert(*i);
+	}
+	return get_jaccard_similarity(query_terms, doc_terms) > similarity_threshold;
+}
 
 void replace(string& str, const string& from, const string& to) {
     if(from.empty()) { return; }
@@ -82,7 +111,11 @@ int main(int argc, char **argv) {
 		// Run the query
 		Xapian::Enquire enquire(db);
 		enquire.set_query(query);
-		Xapian::MSet matches = enquire.get_mset(0, k);
+
+		JaccardMatchDecider jaccardMatchDecider;
+
+		// Search
+		Xapian::MSet matches = enquire.get_mset(0, k, 0, 0, jaccardMatchDecider);
 		cout << "Result mset size is " << matches.size() << endl;
 
 		// Prepare the highlighted search terms
