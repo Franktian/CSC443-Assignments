@@ -13,19 +13,21 @@
 /**
  * Compute Jaccard
  */
-double get_jaccard_similarity (set<string> ngram1, set<string> ngram2) {
-	int intersect = 0, union = 0;
-	double result;
+double get_jaccard_similarity (const set<string> &ngram1, const set<string> &ngram2) {
+	int intersect = 0, union1 = 0;
 
 	for (set<string>::iterator it1 = ngram1.begin(); it1 != ngram1.end(); ++it1) {
 		for (set<string>::iterator it2 = ngram2.begin(); it2 != ngram2.end(); ++it2) {
-			if (*it1.compare(*it2) == 0) {
+			string a = *it1;
+			string b = *it2;
+			if (a.compare(b) == 0) {
 				intersect++;
 			}
 		}
 	}
-	union = ngram1.size() + ngram2.size() - intersect;
-	return intersect / union;
+
+	union1 = ngram1.size() + ngram2.size() - intersect;
+	return (double)intersect / (double)union1;
 }
 
 /**
@@ -89,18 +91,4 @@ vector<string> space_tokenizer (string to_be_tokenized) {
 	         istream_iterator<string>(),
 	         back_inserter<vector<string> >(tokens));
 	return tokens;
-}
-
-int main(int argc, char **argv) {
-	string frank = "micr *james";
-	//vector<string> token = space_tokenizer(frank);
-	//vector<string> result = tokenizer(frank, 3);
-	/*for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
-		cout << *it << endl;
-	}*/
-	string test = "frank, is,\" what? jame & holy$$ fuck` what ~ happend + shit _ +";
-	set<string> t = tokenizer(frank, 3);
-	for (set<string>::iterator it = t.begin(); it != t.end(); ++it) {
-		cout << *it << endl;
-	}
 }

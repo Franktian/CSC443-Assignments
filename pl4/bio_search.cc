@@ -6,19 +6,18 @@
 #include <sys/timeb.h>
 #include <cctype>
 #include <cstdio>
-
-using namespace std;
+#include "library.h"
 
 class JaccardMatchDecider : public Xapian::MatchDecider {
 
-	std::set<string> query_terms;
+	set<string> query_terms;
 	double similarity_threshold;
 
 	public:
 		JaccardMatchDecider(double similarity_threshold) {
 			this->similarity_threshold = similarity_threshold;
 		}
-		void add_term(const string& value) {
+		void add_term(string& value) {
 			query_terms.insert(value);
 		}
 		bool operator()(const Xapian::Document& doc) const;
@@ -31,8 +30,10 @@ bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
 	{
 		doc_terms.insert(*i);
 	}
-	// return get_jaccard_similarity(query_terms, doc_terms) > similarity_threshold;
-	return false;
+	double similarity = get_jaccard_similarity(query_terms, doc_terms);
+	cout << "similarity: " << similarity << endl;
+	return  similarity >= similarity_threshold;
+	//return false;
 }
 
 void replace(string& str, const string& from, const string& to) {
@@ -65,7 +66,7 @@ int main(int argc, char **argv) {
     char* index_name = (char*)argv[1];
     int k = atoi((argv[2]));
     double similarity_threshold = atof(argv[3]);
-    int num_search_terms = argc - 3;
+    int num_search_terms = argc - 4;
     if (k < 1) {
         cout << "top-k must be at least 1!" << endl;
         exit(1);
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
 	    // Construct the query terms and query string
 	    vector<string> query_terms;
 	    string query_string;
-	    for (int i = 3; i < argc; ++i) {
+	    for (int i = 4; i < argc; ++i) {
 	    	char* term = argv[i];
 			// transform the search terms to lower case
 			char c; int j = 0;
@@ -111,7 +112,10 @@ int main(int argc, char **argv) {
 		JaccardMatchDecider jaccardMatchDecider(similarity_threshold);
 		// Add the query ngrams one by one
 		for (int j = 0; j < num_search_terms; j++) {
-			jaccardMatchDecider.add_term(query_terms.at(j));
+			vector<string> tokens = ngram_tokenizer(query_terms.at(j), 3);
+			for (vector<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+				jaccardMatchDecider.add_term(*it);
+			}
 		}
 
 		// Run the query
@@ -119,7 +123,7 @@ int main(int argc, char **argv) {
 		enquire.set_query(query);
 
 		// Search
-		Xapian::MSet matches = enquire.get_mset(0, k, 0, 0, &jaccardMatchDecider);
+		Xapian::MSet matches = enquire.get_mset(0, k);
 		cout << "Result mset size is " << matches.size() << endl;
 
 		// Prepare the highlighted search terms
