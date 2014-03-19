@@ -18,14 +18,11 @@ class JaccardMatchDecider : public Xapian::MatchDecider {
 		JaccardMatchDecider(double similarity_threshold) {
 			this->similarity_threshold = similarity_threshold;
 		}
-		void add_term(const string& value);
+		void add_term(const string& value) {
+			query_terms.insert(value);
+		}
 		bool operator()(const Xapian::Document& doc) const;
-		~JaccardMatchDecider() { delete query_terms; }
 };
-
-void JaccardMatchDecider::add_term(const string& value) {
-	query_terms.insert(value);
-}
 
 bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
 	Xapian::TermIterator i;
@@ -34,7 +31,8 @@ bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
 	{
 		doc_terms.insert(*i);
 	}
-	return get_jaccard_similarity(query_terms, doc_terms) > similarity_threshold;
+	// return get_jaccard_similarity(query_terms, doc_terms) > similarity_threshold;
+	return false;
 }
 
 void replace(string& str, const string& from, const string& to) {
@@ -59,13 +57,14 @@ void replace(string& str, const string& from, const string& to) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 4) {
+	if (argc < 5) {
         cout << "ERROR: invalid input parameters!" << endl;
-        cout << "bio_search <index_name> <top-k> <keyword1> <keyword2> ..." << endl;
+        cout << "bio_search <index_name> <top-k> <similarity threshold> <keyword1> <keyword2> ..." << endl;
         exit(1);
     }
     char* index_name = (char*)argv[1];
     int k = atoi((argv[2]));
+    double similarity_threshold = atof(argv[3]);
     int num_search_terms = argc - 3;
     if (k < 1) {
         cout << "top-k must be at least 1!" << endl;
@@ -87,12 +86,12 @@ int main(int argc, char **argv) {
 	    string query_string;
 	    for (int i = 3; i < argc; ++i) {
 	    	char* term = argv[i];
-		// transform the search terms to lower case
-		char c; int j = 0;
-		while (term[j]) {
-			term[j] = tolower(term[j]);
-			j++;
-		}
+			// transform the search terms to lower case
+			char c; int j = 0;
+			while (term[j]) {
+				term[j] = tolower(term[j]);
+				j++;
+			}
 	    	if (term[0] == '+') {
 	    		query_terms.push_back(term+1);
 	    	} else {
@@ -108,14 +107,19 @@ int main(int argc, char **argv) {
 		// Xapian::Query query(Xapian::Query::OP_OR, query_terms.begin(), query_terms.end());
 		cout << "Performing query `" << query.get_description() << "`" << endl;
 
+		// Construct the match decider that uses jaccard distance measure
+		JaccardMatchDecider jaccardMatchDecider(similarity_threshold);
+		// Add the query ngrams one by one
+		for (int j = 0; j < num_search_terms; j++) {
+			jaccardMatchDecider.add_term(query_terms.at(j));
+		}
+
 		// Run the query
 		Xapian::Enquire enquire(db);
 		enquire.set_query(query);
 
-		JaccardMatchDecider jaccardMatchDecider;
-
 		// Search
-		Xapian::MSet matches = enquire.get_mset(0, k, 0, 0, jaccardMatchDecider);
+		Xapian::MSet matches = enquire.get_mset(0, k, 0, 0, &jaccardMatchDecider);
 		cout << "Result mset size is " << matches.size() << endl;
 
 		// Prepare the highlighted search terms
