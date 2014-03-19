@@ -7,7 +7,26 @@
 #include <string>
 #include <iterator>
 #include <sys/timeb.h>
+#include <set>
 #include "library.h"
+
+/**
+ * Compute Jaccard
+ */
+double get_jaccard_similarity (set<string> ngram1, set<string> ngram2) {
+	int intersect = 0, union = 0;
+	double result;
+
+	for (set<string>::iterator it1 = ngram1.begin(); it1 != ngram1.end(); ++it1) {
+		for (set<string>::iterator it2 = ngram2.begin(); it2 != ngram2.end(); ++it2) {
+			if (*it1.compare(*it2) == 0) {
+				intersect++;
+			}
+		}
+	}
+	union = ngram1.size() + ngram2.size() - intersect;
+	return intersect / union;
+}
 
 /**
  * Get rid of the symbols of a given string
@@ -23,16 +42,19 @@ string encrpytion (string to_be_encrpyted) {
 /**
  * Tokenizer for a string contains white spaces
  */
-vector<string> tokenizer (string to_be_tokenized, int n) {
+set<string> tokenizer (string to_be_tokenized, int n) {
 	// Note that the input string is a string separate by white spaces
-	vector<string> result;
-	// First tokenized the string by white space
-	vector<string> tokens = space_tokenizer(to_be_tokenized);
+	set<string> result;
+	// First, get rid of the symbols
+	string encrpyed = encrpytion(to_be_tokenized);
+	// Second tokenized the string by white space
+	vector<string> tokens = space_tokenizer(encrpyed);
+	// Second, get rid of the symbols
 	for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
 		// For each word in the string, get the n-gram
 		vector<string> single = ngram_tokenizer(*it, n);
 		for (vector<string>::iterator it2 = single.begin(); it2 != single.end(); ++it2) {
-			result.push_back(*it2);
+			result.insert(*it2);
 		}
 		//cout << "****" << endl;
 	}
@@ -70,12 +92,15 @@ vector<string> space_tokenizer (string to_be_tokenized) {
 }
 
 int main(int argc, char **argv) {
-	string frank = "microsoft frank";
-	vector<string> token = space_tokenizer(frank);
-	vector<string> result = tokenizer(frank, 3);
+	string frank = "micr *james";
+	//vector<string> token = space_tokenizer(frank);
+	//vector<string> result = tokenizer(frank, 3);
 	/*for (vector<string>::iterator it = result.begin(); it != result.end(); ++it) {
 		cout << *it << endl;
 	}*/
 	string test = "frank, is,\" what? jame & holy$$ fuck` what ~ happend + shit _ +";
-	cout << encrpytion(test) << endl;
+	set<string> t = tokenizer(frank, 3);
+	for (set<string>::iterator it = t.begin(); it != t.end(); ++it) {
+		cout << *it << endl;
+	}
 }
