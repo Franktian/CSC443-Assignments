@@ -58,15 +58,17 @@ void replace(string& str, const string& from, const string& to) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 5) {
+	if (argc < 6) {
         cout << "ERROR: invalid input parameters!" << endl;
-        cout << "bio_search <index_name> <top-k> <similarity threshold> <keyword1> <keyword2> ..." << endl;
+        cout << "bio_search <index_name> <top-k> <n-gram length> <similarity threshold> <keyword1> <keyword2> ..." << endl;
         exit(1);
     }
     char* index_name = (char*)argv[1];
     int k = atoi((argv[2]));
-    double similarity_threshold = atof(argv[3]);
-    int num_search_terms = argc - 4;
+    int ngram_length = atoi(argv[3]);
+    double similarity_threshold = atof(argv[4]);
+    int query_terms_start = 5;
+    int num_search_terms = argc - query_terms_start;
     if (k < 1) {
         cout << "top-k must be at least 1!" << endl;
         exit(1);
@@ -82,7 +84,7 @@ int main(int argc, char **argv) {
 	    // Construct the query terms and query string
 	    vector<string> query_terms;
 	    string query_string;
-	    for (int i = 4; i < argc; ++i) {
+	    for (int i = query_terms_start; i < argc; ++i) {
 	    	char* term = argv[i];
 			// transform the search terms to lower case
 			char c; int j = 0;
@@ -95,11 +97,11 @@ int main(int argc, char **argv) {
 	    		query_terms.push_back(term+1);
 	    		// Ngramize the term and add them to query string
 	    		string term_str(term+1);
-	    		ngrams = ngram_tokenizer(term_str, 3);
+	    		ngrams = ngram_tokenizer(term_str, ngram_length);
 	    	} else {
 	    		query_terms.push_back(term);
 	    		string term_str(term);
-	    		ngrams = ngram_tokenizer(term_str, 3);
+	    		ngrams = ngram_tokenizer(term_str, ngram_length);
 	    	}
 	    	for (vector<string>::iterator it = ngrams.begin(); it != ngrams.end(); ++it) {
 				if (term[0] == '+') {
