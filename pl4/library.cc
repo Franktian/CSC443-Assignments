@@ -99,7 +99,7 @@ vector<string> ngram_tokenizer (string to_be_tokenized, int n) {
 		for (int i = 0; i < length - n + 1; i++) {
 			sub = to_be_tokenized.substr(i, n);
 			tokens.push_back(sub);
-			//cout << sub << endl;
+			cout << sub << endl;
 		}
 	} else {
 		tokens.push_back(to_be_tokenized);

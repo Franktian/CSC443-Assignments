@@ -29,6 +29,7 @@ for f in os.listdir(DATADIR):
 		for i, row in enumerate(reader):
 			if i == 0:
 				continue
+			
 			[output.write(txt.lstrip().rstrip()+u"\n") for txt in row]
 			output.write(u"\n")
 output.close()
