@@ -114,6 +114,9 @@ set<string> ngram_tokenizer_modified (string to_be_tokenized, int n) {
 	int length = to_be_tokenized.length();
 	set<string> tokens;
 	string sub;
+	if (length == 0) {
+		return tokens;
+	}
 	if (length > n) {
 		for (int i = 0; i < length - n*3 + 1; i = i + 3) {
 			sub = to_be_tokenized.substr(i, n*3);

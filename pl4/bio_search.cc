@@ -17,7 +17,7 @@ class JaccardMatchDecider : public Xapian::MatchDecider {
 		JaccardMatchDecider(double similarity_threshold) {
 			this->similarity_threshold = similarity_threshold;
 		}
-		void add_term(string& value) {
+		void add_term(string value) {
 			query_terms.insert(value);
 		}
 		bool operator()(const Xapian::Document& doc) const;
@@ -92,18 +92,18 @@ int main(int argc, char **argv) {
 				term[j] = tolower(term[j]);
 				j++;
 			}
-			vector<string> ngrams;
+			set<string> ngrams;
 	    	if (term[0] == '+') {
 	    		query_terms.push_back(term+1);
 	    		// Ngramize the term and add them to query string
 	    		string term_str(term+1);
-	    		ngrams = ngram_tokenizer(term_str, ngram_length);
+	    		ngrams = ngram_tokenizer_modified(term_str, ngram_length);
 	    	} else {
 	    		query_terms.push_back(term);
 	    		string term_str(term);
-	    		ngrams = ngram_tokenizer(term_str, ngram_length);
+	    		ngrams = ngram_tokenizer_modified(term_str, ngram_length);
 	    	}
-	    	for (vector<string>::iterator it = ngrams.begin(); it != ngrams.end(); ++it) {
+	    	for (set<string>::iterator it = ngrams.begin(); it != ngrams.end(); ++it) {
 				if (term[0] == '+') {
 					query_string.append("+").append(*it).append(" ");
 				} else {
@@ -123,8 +123,8 @@ int main(int argc, char **argv) {
 		JaccardMatchDecider jaccardMatchDecider(similarity_threshold);
 		// Add the query ngrams one by one
 		for (int j = 0; j < num_search_terms; j++) {
-			vector<string> tokens = ngram_tokenizer(query_terms.at(j), ngram_length);
-			for (vector<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+			set<string> tokens = ngram_tokenizer_modified(query_terms.at(j), ngram_length);
+			for (set<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
 				jaccardMatchDecider.add_term(*it);
 			}
 		}

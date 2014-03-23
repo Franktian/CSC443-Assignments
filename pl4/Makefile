@@ -7,7 +7,7 @@ all: library.o bio_indexer bio_search
 test_indexer: test_indexer.cc
 	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
 bio_indexer: bio_indexer.cc library.o
-	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
+	$(CC) -o $@ $^ $(LIBS) $(INCLUDE)
 bio_search: bio_search.cc library.o
 	$(CC) -o $@ $^ $(LIBS) $(INCLUDE)
 library.o: library.cc library.h
