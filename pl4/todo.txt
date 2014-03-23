@@ -2,5 +2,7 @@ To Do:
 
 1. hightlight search results
 2. make code work for both english and chinese and korean
+	we should be able to use the same code for all the above languages
+	just by changing the value of n
 3. make sure the code run on IMDB dataset (download a large data set)
 4. make presentation
