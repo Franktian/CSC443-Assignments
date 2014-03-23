@@ -1,0 +1,6 @@
+To Do:
+
+1. hightlight search results
+2. make code work for both english and chinese and korean
+3. make sure the code run on IMDB dataset (download a large data set)
+4. make presentation

@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 
 			// combine all lines into a single data
 			string data = firstline + "\n" + secondline + "\n" + thirdline + "\n" + fourthline + "\n" + fifthline;
-			cout << data << endl;
+			// cout << data << endl;
 			set<string> tokens1 = ngram_tokenizer_modified(firstline, size);
 			set<string> tokens2 = ngram_tokenizer_modified(secondline, size);
 			set<string> tokens3 = ngram_tokenizer_modified(thirdline, size);
@@ -83,11 +83,11 @@ int main(int argc, char **argv) {
 			for (set<string>::iterator it1 = tokens1.begin(); it1 != tokens1.end(); ++it1) {
 				//cout << *it1 << endl;
 				doc.add_term(*it1);
-				cout << *it1 << endl;
+				// cout << *it1 << endl;
 			}
 			for (set<string>::iterator it2 = tokens2.begin(); it2 != tokens2.end(); ++it2) {
 				//cout << *it2 << endl;
-				cout << "term: " << *it2 << endl;
+				// cout << "term: " << *it2 << endl;
 
 				doc.add_term(*it2);
 

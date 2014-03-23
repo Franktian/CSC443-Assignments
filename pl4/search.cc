@@ -43,15 +43,15 @@ void replace(string& str, const string& from, const string& to) {
 	size_t from_length = from.length();
     while((start_pos = str.find(from, start_pos)) != string::npos) {
     	// Check to make sure the term is not a part of another word
-		if (start_pos+from_length < str.length() && 
-			str.at(start_pos+from_length) != ' ') {
-			start_pos += from_length;
-			continue;
-		}
-		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
-			start_pos += from_length;
-			continue;
-		}
+		// if (start_pos+from_length < str.length() && 
+		// 	str.at(start_pos+from_length) != ' ') {
+		// 	start_pos += from_length;
+		// 	continue;
+		// }
+		// if (start_pos > 0 && str.at(start_pos-1) != ' ') {
+		// 	start_pos += from_length;
+		// 	continue;
+		// }
         str.replace(start_pos, from_length, to);
         start_pos += to_length;
     }
