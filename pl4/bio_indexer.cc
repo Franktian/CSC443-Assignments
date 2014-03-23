@@ -9,6 +9,21 @@
 #include <sys/timeb.h>
  
 using namespace std;
+set<string> ngram_tokenizer_modified (string to_be_tokenized, int n) {
+	int length = to_be_tokenized.length();
+	set<string> tokens;
+	string sub;
+	if (length > n) {
+		for (int i = 0; i < length - n*3 + 1; i = i + 3) {
+			sub = to_be_tokenized.substr(i, n*3);
+			tokens.insert(sub);
+			//cout << sub << endl;
+		}
+	} else {
+		tokens.insert(to_be_tokenized);
+	}
+	return tokens;
+}
 
 int main(int argc, char **argv) {
 
@@ -46,7 +61,61 @@ int main(int argc, char **argv) {
 	    ftime(&_t);
 	    long start = _t.time * 1000 + _t.millitm;
 
+	    string firstline;
+	    string secondline;
+	    string thirdline;
+	    string fourthline;
+	    string fifthline;
+
 		while (getline(file, line)) {
+			//cout << line << endl;
+			//string firstline = line;
+			getline(file, firstline);
+			getline(file, secondline);
+			getline(file, thirdline);
+			getline(file, fourthline);
+			getline(file, fifthline);
+
+			// combine all lines into a single data
+			string data = firstline + "\n" + secondline + "\n" + thirdline + "\n" + fourthline + "\n" + fifthline;
+			cout << data << endl;
+			set<string> tokens1 = ngram_tokenizer_modified(firstline, size);
+			set<string> tokens2 = ngram_tokenizer_modified(secondline, size);
+			set<string> tokens3 = ngram_tokenizer_modified(thirdline, size);
+			set<string> tokens4 = ngram_tokenizer_modified(fourthline, size);
+			set<string> tokens5 = ngram_tokenizer_modified(fifthline, size);
+
+			for (set<string>::iterator it1 = tokens1.begin(); it1 != tokens1.end(); ++it1) {
+				//cout << *it1 << endl;
+				doc.add_term(*it1);
+			}
+			for (set<string>::iterator it2 = tokens2.begin(); it2 != tokens2.end(); ++it2) {
+				//cout << *it2 << endl;
+				doc.add_term(*it2);
+			}
+			for (set<string>::iterator it3 = tokens3.begin(); it3 != tokens3.end(); ++it3) {
+				//cout << *it3 << endl;
+				doc.add_term(*it3);
+			}
+
+			for (set<string>::iterator it4 = tokens4.begin(); it4 != tokens4.end(); ++it4) {
+				//cout << *it4 << endl;
+				doc.add_term(*it4);
+			}
+
+			for (set<string>::iterator it5 = tokens5.begin(); it5 != tokens5.end(); ++it5) {
+				//cout << *it5 << endl;
+				doc.add_term(*it5);
+			}
+
+			doc.add_value(0, fifthline);
+			doc.set_data(data);
+			db.add_document(doc);
+
+			doc.clear_terms();
+			doc.clear_values();
+			/*
+			//cout << "****" << endl;
 			// First line must be a person's name, copy it
 			char *name = new char [line.size() + 1];
 			std::copy(line.begin(), line.end(), name);
@@ -77,7 +146,7 @@ int main(int argc, char **argv) {
 
 			// Clear the document ready for the next
 			doc.clear_terms();
-			doc.clear_values();
+			doc.clear_values();*/
 
 		}
 
