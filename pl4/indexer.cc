@@ -15,9 +15,9 @@ using namespace std;
 int main(int argc, char **argv) {
 
 
-    if (argc != 4) {
+    if (argc != 5) {
 		cout << "ERROR: invalid input parameters!" << endl;
-		cout << "Usage: <parsed_biographies> <index_name> <n>" << endl;
+		cout << "Usage: <parsed list file> <index name> <ngram size> <ngram unit length (3 for chinese, 1 for english)>" << endl;
 		exit(1);
 	}
 
@@ -36,6 +36,9 @@ int main(int argc, char **argv) {
 
 	//this indicate what gram you wouldl like to get
 	int size = atoi(argv[3]);
+
+	// The character length of each character in the ngram, 3 for chinese, 1 for english character
+	int ngram_unit_len = atoi(argv[4]);
 
 	try {
 		Xapian::WritableDatabase db(dbname, Xapian::DB_CREATE_OR_OPEN);
@@ -74,11 +77,11 @@ int main(int argc, char **argv) {
 			// combine all lines into a single data
 			string data = firstline + "\n" + secondline + "\n" + thirdline + "\n" + fourthline + "\n" + fifthline;
 			// cout << data << endl;
-			set<string> tokens1 = ngram_tokenizer_modified(firstline, size);
-			set<string> tokens2 = ngram_tokenizer_modified(secondline, size);
-			set<string> tokens3 = ngram_tokenizer_modified(thirdline, size);
-			set<string> tokens4 = ngram_tokenizer_modified(fourthline, size);
-			set<string> tokens5 = ngram_tokenizer_modified(fifthline, size);
+			set<string> tokens1 = ngram_tokenizer(firstline, size, ngram_unit_len);
+			set<string> tokens2 = ngram_tokenizer(secondline, size, ngram_unit_len);
+			set<string> tokens3 = ngram_tokenizer(thirdline, size, ngram_unit_len);
+			set<string> tokens4 = ngram_tokenizer(fourthline, size, ngram_unit_len);
+			set<string> tokens5 = ngram_tokenizer(fifthline, size, ngram_unit_len);
 
 			for (set<string>::iterator it1 = tokens1.begin(); it1 != tokens1.end(); ++it1) {
 				//cout << *it1 << endl;
