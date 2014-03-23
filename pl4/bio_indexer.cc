@@ -13,6 +13,9 @@ set<string> ngram_tokenizer_modified (string to_be_tokenized, int n) {
 	int length = to_be_tokenized.length();
 	set<string> tokens;
 	string sub;
+	if (length == 0) {
+		return tokens;
+	}
 	if (length > n) {
 		for (int i = 0; i < length - n*3 + 1; i = i + 3) {
 			sub = to_be_tokenized.substr(i, n*3);
@@ -66,10 +69,18 @@ int main(int argc, char **argv) {
 	    string thirdline;
 	    string fourthline;
 	    string fifthline;
+	    //bool canAddTerm1;
+	    //bool canAddTerm2;
+
 
 		while (getline(file, line)) {
 			//cout << line << endl;
 			//string firstline = line;
+			/*canAddTerm1 = true;
+			canAddTerm2 = true;
+			canAddTerm3 = true;
+			canAddTerm4 = true;
+			canAddTerm5 = true;*/
 			getline(file, firstline);
 			getline(file, secondline);
 			getline(file, thirdline);
@@ -91,7 +102,10 @@ int main(int argc, char **argv) {
 			}
 			for (set<string>::iterator it2 = tokens2.begin(); it2 != tokens2.end(); ++it2) {
 				//cout << *it2 << endl;
-				doc.add_term(*it2);
+				cout << "term: " << *it2 << endl;
+
+					doc.add_term(*it2);
+
 			}
 			for (set<string>::iterator it3 = tokens3.begin(); it3 != tokens3.end(); ++it3) {
 				//cout << *it3 << endl;

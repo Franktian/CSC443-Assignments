@@ -32,6 +32,6 @@ for f in os.listdir(DATADIR):
 				continue
 			output.write(u"\n")
 			for txt in row:
-				t = txt.lstrip().rstrip().replace(u"|", u"，").replace(u"(", u"（").replace(u")", u"）")
+				t = txt.lstrip().rstrip().replace(u"|", u"，").replace(u"(", u"（").replace(u")", u"）").replace(u",", u"，")
 				output.write(t+u"\n")
 output.close()
