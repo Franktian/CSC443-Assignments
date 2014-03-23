@@ -21,14 +21,37 @@ double get_jaccard_similarity (const set<string> &ngram1, const set<string> &ngr
 		for (set<string>::iterator it2 = ngram2.begin(); it2 != ngram2.end(); ++it2) {
 			string a = *it1;
 			string b = *it2;
+
 			if (a.compare(b) == 0) {
 				intersect++;
 			}
 		}
 	}
-
+	
 	union1 = ngram1.size() + ngram2.size() - intersect;
 	return (double)intersect / (double)union1;
+}
+
+/**
+ * Compute modified Jaccard
+ */
+double get_jaccard_similarity_modified (const set<string> &ngram1, const set<string> &ngram2) {
+	int intersect = 0;
+	// ngram1 is the query string
+	for (set<string>::iterator it1 = ngram1.begin(); it1 != ngram1.end(); ++it1) {
+		for (set<string>::iterator it2 = ngram2.begin(); it2 != ngram2.end(); ++it2) {
+			string a = *it1;
+			string b = *it2;
+			//cout << "*******" << endl;
+			//cout << a << endl;
+			//cout << b << endl;
+			if (a.compare(b) == 0) {
+				intersect++;
+			}
+		}
+	}
+	//cout << intersect << endl;
+	return (double)intersect / (double)ngram1.size();
 }
 
 /**
@@ -64,6 +87,7 @@ set<string> tokenizer (string to_be_tokenized, int n) {
 	return result;
 }
 
+
 /**
  * Tokenizer for a singe string with no space
  */
@@ -75,9 +99,29 @@ vector<string> ngram_tokenizer (string to_be_tokenized, int n) {
 		for (int i = 0; i < length - n + 1; i++) {
 			sub = to_be_tokenized.substr(i, n);
 			tokens.push_back(sub);
+			//cout << sub << endl;
 		}
 	} else {
 		tokens.push_back(to_be_tokenized);
+	}
+	return tokens;
+}
+
+/**
+ * Tokenizer for a singe string with no space
+ */
+set<string> ngram_tokenizer_modified (string to_be_tokenized, int n) {
+	int length = to_be_tokenized.length();
+	set<string> tokens;
+	string sub;
+	if (length > n) {
+		for (int i = 0; i < length - n*3 + 1; i = i + 3) {
+			sub = to_be_tokenized.substr(i, n*3);
+			tokens.insert(sub);
+			//cout << sub << endl;
+		}
+	} else {
+		tokens.insert(to_be_tokenized);
 	}
 	return tokens;
 }
@@ -93,3 +137,16 @@ vector<string> space_tokenizer (string to_be_tokenized) {
 	         back_inserter<vector<string> >(tokens));
 	return tokens;
 }
+
+/*int main(int argc, char **argv) {
+	string a = "田雅文在河边吃草";
+	string b = "田雅文在志";
+	const set<string> tokens1 = ngram_tokenizer_modified(a, 2);
+	const set<string> tokens2 = ngram_tokenizer_modified(b, 2);
+	//for (vector<string>::iterator it = tokens1.begin(); it != tokens1.end(); ++it) {
+	//	cout << *it << endl;
+	//}
+	//tokenizer_modified(a);
+	cout << get_jaccard_similarity_modified(tokens2, tokens1) << endl;
+	
+}*/
