@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 		JaccardMatchDecider jaccardMatchDecider(similarity_threshold);
 		// Add the query ngrams one by one
 		for (int j = 0; j < num_search_terms; j++) {
-			vector<string> tokens = ngram_tokenizer(query_terms.at(j), 3);
+			vector<string> tokens = ngram_tokenizer(query_terms.at(j), ngram_length);
 			for (vector<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
 				jaccardMatchDecider.add_term(*it);
 			}
