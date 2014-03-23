@@ -58,17 +58,19 @@ void replace(string& str, const string& from, const string& to) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 6) {
+	if (argc < 7) {
         cout << "ERROR: invalid input parameters!" << endl;
-        cout << "bio_search <index_name> <top-k> <n-gram length> <similarity threshold> <keyword1> <keyword2> ..." << endl;
+        cout << "bio_search <index_name> <top-k> <n-gram length> <n-gram unit length> <similarity threshold> <keyword1> <keyword2> ..." << endl;
         exit(1);
     }
     char* index_name = (char*)argv[1];
     int k = atoi((argv[2]));
     int ngram_length = atoi(argv[3]);
-    double similarity_threshold = atof(argv[4]);
-    int query_terms_start = 5;
+    int ngrams_unit_length = atoi(argv[4]);
+    double similarity_threshold = atof(argv[5]);
+    int query_terms_start = 6;
     int num_search_terms = argc - query_terms_start;
+
     if (k < 1) {
         cout << "top-k must be at least 1!" << endl;
         exit(1);
@@ -97,11 +99,11 @@ int main(int argc, char **argv) {
 	    		query_terms.push_back(term+1);
 	    		// Ngramize the term and add them to query string
 	    		string term_str(term+1);
-	    		ngrams = ngram_tokenizer_modified(term_str, ngram_length);
+	    		ngrams = ngram_tokenizer(term_str, ngram_length, ngrams_unit_length);
 	    	} else {
 	    		query_terms.push_back(term);
 	    		string term_str(term);
-	    		ngrams = ngram_tokenizer_modified(term_str, ngram_length);
+	    		ngrams = ngram_tokenizer(term_str, ngram_length, ngrams_unit_length);
 	    	}
 	    	for (set<string>::iterator it = ngrams.begin(); it != ngrams.end(); ++it) {
 				if (term[0] == '+') {
@@ -123,7 +125,7 @@ int main(int argc, char **argv) {
 		JaccardMatchDecider jaccardMatchDecider(similarity_threshold);
 		// Add the query ngrams one by one
 		for (int j = 0; j < num_search_terms; j++) {
-			set<string> tokens = ngram_tokenizer_modified(query_terms.at(j), ngram_length);
+			set<string> tokens = ngram_tokenizer(query_terms.at(j), ngram_length, ngrams_unit_length);
 			for (set<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
 				jaccardMatchDecider.add_term(*it);
 			}

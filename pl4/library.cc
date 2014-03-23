@@ -78,8 +78,8 @@ set<string> tokenizer (string to_be_tokenized, int n) {
 	// Second, get rid of the symbols
 	for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
 		// For each word in the string, get the n-gram
-		vector<string> single = ngram_tokenizer(*it, n);
-		for (vector<string>::iterator it2 = single.begin(); it2 != single.end(); ++it2) {
+		set<string> single = ngram_tokenizer(*it, n, 1);
+		for (set<string>::iterator it2 = single.begin(); it2 != single.end(); ++it2) {
 			result.insert(*it2);
 		}
 		//cout << "****" << endl;
@@ -91,18 +91,21 @@ set<string> tokenizer (string to_be_tokenized, int n) {
 /**
  * Tokenizer for a singe string with no space
  */
-vector<string> ngram_tokenizer (string to_be_tokenized, int n) {
+set<string> ngram_tokenizer (string to_be_tokenized, int n, int unit_len) {
 	int length = to_be_tokenized.length();
-	vector<string> tokens;
+	set<string> tokens;
 	string sub;
+	if (length == 0) {
+		return tokens;
+	}
 	if (length > n) {
-		for (int i = 0; i < length - n + 1; i++) {
-			sub = to_be_tokenized.substr(i, n);
-			tokens.push_back(sub);
-			cout << sub << endl;
+		for (int i = 0; i < length - n*unit_len + 1; i+=unit_len) {
+			sub = to_be_tokenized.substr(i, n*unit_len);
+			tokens.insert(sub);
+			// cout << sub << endl;
 		}
 	} else {
-		tokens.push_back(to_be_tokenized);
+		tokens.insert(to_be_tokenized);
 	}
 	return tokens;
 }
