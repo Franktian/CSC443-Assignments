@@ -31,7 +31,7 @@ bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
 		doc_terms.insert(*i);
 	}
 	double similarity = get_jaccard_similarity(query_terms, doc_terms);
-	cout << "similarity: " << similarity << endl;
+	// cout << "similarity: " << similarity << endl;
 	return  similarity >= similarity_threshold;
 	//return false;
 }

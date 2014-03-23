@@ -1,3 +1,4 @@
+# coding: utf8
 import os
 import csv
 import codecs
@@ -29,6 +30,8 @@ for f in os.listdir(DATADIR):
 		for i, row in enumerate(reader):
 			if i == 0:
 				continue
-			[output.write(txt.lstrip().rstrip()+u"\n") for txt in row]
 			output.write(u"\n")
+			for txt in row:
+				t = txt.lstrip().rstrip().replace(u"|", u"，").replace(u"(", u"（").replace(u")", u"）")
+				output.write(t+u"\n")
 output.close()
