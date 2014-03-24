@@ -90,6 +90,7 @@ bool fuzzy_highlight(string& data, const string& query_word,
 		set<string> word_ngrams = ngram_tokenizer((*it)[0], ngram_length, ngrams_unit_length);
 		similarity = get_jaccard_similarity(query_ngrams, word_ngrams);
 		cout << "similarity " << (*it)[0] << " : " << query_word << " = " << similarity << endl;
+		cout << "lengths " << word_ngrams.size() << " " << query_ngrams.size() << endl;
 		if (similarity >= similarity_threshold) {
 			// Replace the term with highlight
 			cout << "replacing " << (*it)[0] << " with " << highlight_word << endl;
