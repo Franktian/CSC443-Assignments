@@ -85,7 +85,6 @@ int main(int argc, char **argv) {
 
 			for (set<string>::iterator it4 = tokens4.begin(); it4 != tokens4.end(); ++it4) {
 				doc.add_term(*it4);
-				cout << *it4 << endl;
 			}
 
 			for (set<string>::iterator it5 = tokens5.begin(); it5 != tokens5.end(); ++it5) {
