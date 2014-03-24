@@ -54,6 +54,15 @@ bool replace(string& str, const string& from, const string& to) {
 		// 	start_pos += from_length;
 		// 	continue;
 		// }
+		if (start_pos > 0 && str.at(start_pos-1) == '=') {
+			start_pos += from_length;
+			continue;
+		}
+		if (start_pos+from_length < str.length() &&
+			str.at(start_pos+from_length) == '=') {
+			start_pos += from_length;
+			continue;
+		}
         str.replace(start_pos, from_length, to);
         start_pos += to_length;
         found = true;
@@ -75,26 +84,29 @@ bool replace_asian_text(string& str, const string& from, const string& to) {
     return found;
 }
 
-bool fuzzy_highlight(string& data, const string& query_word, 
-	const string& highlight_word, int ngram_length, 
-	int ngrams_unit_length, double similarity_threshold) {
-	int similarity;
+bool fuzzy_highlight(string& data, const string& query_word, int ngram_length, 
+		int ngrams_unit_length, double similarity_threshold) {
+	double similarity;
 	bool found = false;
 	// For Asian text we just do simple replace, as regular expression cannot find word
 	if (ngrams_unit_length == 3) {
+		string highlight_word("===="+query_word+"====");
 		return replace_asian_text(data, query_word, highlight_word);
 	}
 	set<string> query_ngrams = ngram_tokenizer(query_word, ngram_length, ngrams_unit_length);
 	regex rgx("\\w+");
 	for (sregex_iterator it(data.begin(), data.end(), rgx), it_end; it != it_end; ++it) {
-		set<string> word_ngrams = ngram_tokenizer((*it)[0], ngram_length, ngrams_unit_length);
+		string word((*it)[0]);
+		set<string> word_ngrams = ngram_tokenizer(word, ngram_length, ngrams_unit_length);
 		similarity = get_jaccard_similarity(query_ngrams, word_ngrams);
-		cout << "similarity " << (*it)[0] << " : " << query_word << " = " << similarity << endl;
-		cout << "lengths " << word_ngrams.size() << " " << query_ngrams.size() << endl;
+		string highlight_word = "====" + word + "====";
+		// cout << "similarity " << (*it)[0] << " : " << query_word << " = " << similarity << endl;
+		// cout << "lengths " << word_ngrams.size() << " " << query_ngrams.size() << endl;
+		// cout << "found " << word << endl;
 		if (similarity >= similarity_threshold) {
 			// Replace the term with highlight
-			cout << "replacing " << (*it)[0] << " with " << highlight_word << endl;
-			replace(data, (*it)[0], highlight_word);
+			// cout << "replacing " << (*it)[0] << " with " << highlight_word << endl;
+			replace(data, word, highlight_word);
 			found = true;
 		}
 	}
@@ -212,8 +224,8 @@ int main(int argc, char **argv) {
 			for (int j = 0; j < num_search_terms; j++) {
 				// Highlight the fuzzy term in this data
 				// cout << "highlighting " << query_terms.at(j) << endl;
-				fuzzy_highlight(data, query_terms.at(j), highlighted_terms.at(j), 
-						ngram_length, ngrams_unit_length, similarity_threshold);
+				fuzzy_highlight(data, query_terms.at(j), ngram_length, 
+					ngrams_unit_length, similarity_threshold);
 			}
 
 			// Print the highlighted document
