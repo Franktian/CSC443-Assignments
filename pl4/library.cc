@@ -68,7 +68,7 @@ string encrpytion (string to_be_encrpyted) {
 /**
  * Tokenizer for a string contains white spaces
  */
-set<string> tokenizer (string to_be_tokenized, int n) {
+set<string> tokenizer (string to_be_tokenized, int n, int unit_len) {
 	// Note that the input string is a string separate by white spaces
 	set<string> result;
 	// First, get rid of the symbols
@@ -78,11 +78,10 @@ set<string> tokenizer (string to_be_tokenized, int n) {
 	// Second, get rid of the symbols
 	for (vector<string>::iterator it = tokens.begin() ; it != tokens.end(); ++it) {
 		// For each word in the string, get the n-gram
-		set<string> single = ngram_tokenizer(*it, n, 1);
+		set<string> single = ngram_tokenizer(*it, n, unit_len);
 		for (set<string>::iterator it2 = single.begin(); it2 != single.end(); ++it2) {
 			result.insert(*it2);
 		}
-		//cout << "****" << endl;
 	}
 	return result;
 }
@@ -102,7 +101,6 @@ set<string> ngram_tokenizer (string to_be_tokenized, int n, int unit_len) {
 		for (int i = 0; i < length - n*unit_len + 1; i+=unit_len) {
 			sub = to_be_tokenized.substr(i, n*unit_len);
 			tokens.insert(sub);
-			// cout << sub << endl;
 		}
 	} else {
 		tokens.insert(to_be_tokenized);
@@ -110,27 +108,6 @@ set<string> ngram_tokenizer (string to_be_tokenized, int n, int unit_len) {
 	return tokens;
 }
 
-/**
- * Tokenizer for a singe string with no space
- */
-set<string> ngram_tokenizer_modified (string to_be_tokenized, int n) {
-	int length = to_be_tokenized.length();
-	set<string> tokens;
-	string sub;
-	if (length == 0) {
-		return tokens;
-	}
-	if (length > n) {
-		for (int i = 0; i < length - n*3 + 1; i = i + 3) {
-			sub = to_be_tokenized.substr(i, n*3);
-			tokens.insert(sub);
-			//cout << sub << endl;
-		}
-	} else {
-		tokens.insert(to_be_tokenized);
-	}
-	return tokens;
-}
 /**
  * Tokenize a given string by white space
  */
@@ -145,14 +122,25 @@ vector<string> space_tokenizer (string to_be_tokenized) {
 }
 
 /*int main(int argc, char **argv) {
-	string a = "田雅文在河边吃草";
-	string b = "田雅文在志";
-	const set<string> tokens1 = ngram_tokenizer_modified(a, 2);
-	const set<string> tokens2 = ngram_tokenizer_modified(b, 2);
+	string a = "나는 내 일이 좋다 하하는 것을 누구";
+	//cout << a << endl;
+	for (int i = 0; i < a.length(); i+=3) {
+		//cout << a.substr(i, 3) << endl;
+	}
+	//string b = "田雅文在志";
+	//string c = "microsoft frank";
+	set<string> aa = tokenizer(a, 2, 3);
+
+	for (set<string>::iterator it = aa.begin(); it != aa.end(); ++it) {
+		cout << *it << endl;
+	}
+	//cout << encrpytion(b) << endl;
+	//const set<string> tokens1 = ngram_tokenizer_modified(a, 2);
+	//const set<string> tokens2 = ngram_tokenizer_modified(b, 2);
 	//for (vector<string>::iterator it = tokens1.begin(); it != tokens1.end(); ++it) {
 	//	cout << *it << endl;
 	//}
 	//tokenizer_modified(a);
-	cout << get_jaccard_similarity_modified(tokens2, tokens1) << endl;
+	//cout << get_jaccard_similarity_modified(tokens2, tokens1) << endl;
 	
 }*/
