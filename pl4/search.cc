@@ -6,6 +6,7 @@
 #include <sys/timeb.h>
 #include <cctype>
 #include <cstdio>
+#include <regex>
 #include "library.h"
 
 class JaccardMatchDecider : public Xapian::MatchDecider {
@@ -36,25 +37,47 @@ bool JaccardMatchDecider::operator()(const Xapian::Document& doc) const {
 	//return false;
 }
 
-void replace(string& str, const string& from, const string& to) {
-    if(from.empty()) { return; }
+bool replace(string& str, const string& from, const string& to) {
+    if(from.empty()) { return false; }
+    bool found = false;
     size_t start_pos = 0;
     size_t to_length = to.length();
 	size_t from_length = from.length();
     while((start_pos = str.find(from, start_pos)) != string::npos) {
     	// Check to make sure the term is not a part of another word
-		// if (start_pos+from_length < str.length() && 
-		// 	str.at(start_pos+from_length) != ' ') {
-		// 	start_pos += from_length;
-		// 	continue;
-		// }
-		// if (start_pos > 0 && str.at(start_pos-1) != ' ') {
-		// 	start_pos += from_length;
-		// 	continue;
-		// }
+		if (start_pos+from_length < str.length() && 
+			str.at(start_pos+from_length) != ' ') {
+			start_pos += from_length;
+			continue;
+		}
+		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
+			start_pos += from_length;
+			continue;
+		}
         str.replace(start_pos, from_length, to);
         start_pos += to_length;
+        found = true;
     }
+    return found;
+}
+
+bool fuzzy_highlight(string& data, const string& query_word, 
+	const string& highlight_word, int ngram_length, 
+	int ngrams_unit_length, double similarity_threshold) {
+	int similarity;
+	bool found = false;
+	set<string> query_ngrams = ngram_tokenizer(query_word, ngram_length, ngrams_unit_length);
+	regex rgx("\\w+");
+	for (sregex_iterator it(data.begin(), data.end(), rgx), it_end; it != it_end; ++it) {
+		set<string> word_ngrams = ngram_tokenizer((*it)[0], ngram_length, ngrams_unit_length);
+		similarity = get_jaccard_similarity(query_ngrams, word_ngrams);
+		if (similarity > similarity_threshold) {
+			// Replace the term with highlight
+			replace(data, (*it)[0], query_word);
+			found = true;
+		}
+	}
+	return found;
 }
 
 int main(int argc, char **argv) {
@@ -166,7 +189,9 @@ int main(int argc, char **argv) {
 			string data = doc.get_data();
 			//cout << data << endl;
 			for (int j = 0; j < num_search_terms; j++) {
-				replace(data, query_terms.at(j), highlighted_terms.at(j));
+				// Highlight the fuzzy term in this data
+				fuzzy_highlight(data, query_terms.at(j), highlighted_terms.at(j), 
+						ngram_length, ngrams_unit_length, similarity_threshold);
 			}
 
 			// Print the highlighted document
