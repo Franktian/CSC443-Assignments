@@ -45,15 +45,15 @@ bool replace(string& str, const string& from, const string& to) {
 	size_t from_length = from.length();
     while((start_pos = str.find(from, start_pos)) != string::npos) {
     	// Check to make sure the term is not a part of another word
-		if (start_pos+from_length < str.length() && 
-			str.at(start_pos+from_length) != ' ') {
-			start_pos += from_length;
-			continue;
-		}
-		if (start_pos > 0 && str.at(start_pos-1) != ' ') {
-			start_pos += from_length;
-			continue;
-		}
+		// if (start_pos+from_length < str.length() && 
+		// 	str.at(start_pos+from_length) != ' ') {
+		// 	start_pos += from_length;
+		// 	continue;
+		// }
+		// if (start_pos > 0 && str.at(start_pos-1) != ' ') {
+		// 	start_pos += from_length;
+		// 	continue;
+		// }
         str.replace(start_pos, from_length, to);
         start_pos += to_length;
         found = true;
@@ -89,9 +89,11 @@ bool fuzzy_highlight(string& data, const string& query_word,
 	for (sregex_iterator it(data.begin(), data.end(), rgx), it_end; it != it_end; ++it) {
 		set<string> word_ngrams = ngram_tokenizer((*it)[0], ngram_length, ngrams_unit_length);
 		similarity = get_jaccard_similarity(query_ngrams, word_ngrams);
-		if (similarity > similarity_threshold) {
+		cout << "similarity " << (*it)[0] << " : " << query_word << " = " << similarity << endl;
+		if (similarity >= similarity_threshold) {
 			// Replace the term with highlight
-			replace(data, (*it)[0], query_word);
+			cout << "replacing " << (*it)[0] << " with " << highlight_word << endl;
+			replace(data, (*it)[0], highlight_word);
 			found = true;
 		}
 	}
@@ -208,7 +210,7 @@ int main(int argc, char **argv) {
 			//cout << data << endl;
 			for (int j = 0; j < num_search_terms; j++) {
 				// Highlight the fuzzy term in this data
-				cout << "highlighting " << query_terms.at(j) << endl;
+				// cout << "highlighting " << query_terms.at(j) << endl;
 				fuzzy_highlight(data, query_terms.at(j), highlighted_terms.at(j), 
 						ngram_length, ngrams_unit_length, similarity_threshold);
 			}
