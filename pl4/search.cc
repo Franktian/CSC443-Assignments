@@ -61,11 +61,29 @@ bool replace(string& str, const string& from, const string& to) {
     return found;
 }
 
+bool replace_asian_text(string& str, const string& from, const string& to) {
+	if(from.empty()) { return false; }
+    bool found = false;
+    size_t start_pos = 0;
+    size_t to_length = to.length();
+	size_t from_length = from.length();
+    while((start_pos = str.find(from, start_pos)) != string::npos) {
+        str.replace(start_pos, from_length, to);
+        start_pos += to_length;
+        found = true;
+    }
+    return found;
+}
+
 bool fuzzy_highlight(string& data, const string& query_word, 
 	const string& highlight_word, int ngram_length, 
 	int ngrams_unit_length, double similarity_threshold) {
 	int similarity;
 	bool found = false;
+	// For Asian text we just do simple replace, as regular expression cannot find word
+	if (ngrams_unit_length == 3) {
+		return replace_asian_text(data, query_word, highlight_word);
+	}
 	set<string> query_ngrams = ngram_tokenizer(query_word, ngram_length, ngrams_unit_length);
 	regex rgx("\\w+");
 	for (sregex_iterator it(data.begin(), data.end(), rgx), it_end; it != it_end; ++it) {
@@ -190,6 +208,7 @@ int main(int argc, char **argv) {
 			//cout << data << endl;
 			for (int j = 0; j < num_search_terms; j++) {
 				// Highlight the fuzzy term in this data
+				cout << "highlighting " << query_terms.at(j) << endl;
 				fuzzy_highlight(data, query_terms.at(j), highlighted_terms.at(j), 
 						ngram_length, ngrams_unit_length, similarity_threshold);
 			}
