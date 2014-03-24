@@ -13,4 +13,4 @@ search: search.cc library.o
 library.o: library.cc library.h
 	$(CC) -o $@ -c $<
 clean:
-	rm -rf *.o test_indexer search indexer ... indexer library.o
+	rm -rf *.o test_indexer search indexer ... index library.o
