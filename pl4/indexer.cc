@@ -66,18 +66,18 @@ int main(int argc, char **argv) {
 
 			// combine all lines into a single data
 			string data = firstline + "\n" + secondline + "\n" + thirdline + "\n" + fourthline + "\n" + fifthline;
-			// cout << data << endl;
-			set<string> tokens1 = ngram_tokenizer(firstline, size, ngram_unit_len);
-			set<string> tokens2 = ngram_tokenizer(secondline, size, ngram_unit_len);
-			set<string> tokens3 = ngram_tokenizer(thirdline, size, ngram_unit_len);
-			set<string> tokens4 = ngram_tokenizer(fourthline, size, ngram_unit_len);
-			set<string> tokens5 = ngram_tokenizer(fifthline, size, ngram_unit_len);
+			set<string> tokens1 = tokenizer(firstline, size, ngram_unit_len);
+			set<string> tokens2 = tokenizer(secondline, size, ngram_unit_len);
+			set<string> tokens3 = tokenizer(thirdline, size, ngram_unit_len);
+			set<string> tokens4 = tokenizer(fourthline, size, ngram_unit_len);
+			set<string> tokens5 = tokenizer(fifthline, size, ngram_unit_len);
 
 			for (set<string>::iterator it1 = tokens1.begin(); it1 != tokens1.end(); ++it1) {
 				doc.add_term(*it1);
 			}
 			for (set<string>::iterator it2 = tokens2.begin(); it2 != tokens2.end(); ++it2) {
 				doc.add_term(*it2);
+
 			}
 			for (set<string>::iterator it3 = tokens3.begin(); it3 != tokens3.end(); ++it3) {
 				doc.add_term(*it3);
@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
 
 			for (set<string>::iterator it4 = tokens4.begin(); it4 != tokens4.end(); ++it4) {
 				doc.add_term(*it4);
+				cout << *it4 << endl;
 			}
 
 			for (set<string>::iterator it5 = tokens5.begin(); it5 != tokens5.end(); ++it5) {

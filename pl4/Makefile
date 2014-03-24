@@ -12,5 +12,7 @@ search: search.cc library.o
 	$(CC) -o $@ $^ $(LIBS) $(INCLUDE)
 library.o: library.cc library.h
 	$(CC) -o $@ -c $<
+library: library.cc
+	$(CC) -o $@ $< $(LIBS) $(INCLUDE)
 clean:
-	rm -rf *.o test_indexer search indexer ... index library.o
+	rm -rf *.o test_indexer search indexer ... indexchinese indexkorean indexenglish library.o
